@@ -60,8 +60,6 @@ Ext.define("GridExporter", {
         var cols    = grid.columns;
         var store   = grid.store;
         var data    = '';
-        console.log("cols",cols);
-        console.log(store.data.items.length);
 
         var that = this;
         Ext.Array.each(cols, function(col, index) {
@@ -76,7 +74,6 @@ Ext.define("GridExporter", {
         data += "\n";
 
         _.each( store.data.items, function(record,i) {
-            console.log(i);
 
             Ext.Array.each(cols, function(col, index) {
             
