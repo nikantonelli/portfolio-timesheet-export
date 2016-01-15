@@ -35,7 +35,7 @@ Ext.define('CustomApp', {
                     switch(_.first(item).get('interval')){
                         case 'Today' : 
                             start = moment().startOf('day').toDate();
-                            end = moment().endOf('end').toDate();
+                            end = moment().endOf('day').toDate();
                             break;
                         case 'This Week':
                             start = moment().startOf('week').toDate();
@@ -83,9 +83,7 @@ Ext.define('CustomApp', {
             handler : function() {
                 // export
                 var grid = app.down("#grid");
-                // console.log("grid",grid);
                 var link = app.down("#exportLink");
-                // console.log("link",link);
                 link.update(app.exporter.exportGrid(grid));
             }
         },
@@ -145,8 +143,8 @@ Ext.define('CustomApp', {
     userColumn : {  
         text: "User", width:100, 
         renderer : function(value, metaData, record, rowIdx, colIdx, store, view) {
-            var item = record.get("TimeEntryItemObject");
-            return item ? item.get("User")._refObjectName : "";
+            var item = record.get("UserObject");
+            return item ? item.get("UserName") : "";
        }
     },
 
@@ -179,32 +177,47 @@ Ext.define('CustomApp', {
             listeners:  {
                 load : function(rows) {
                     var values = rows.data.items;
+
                     // time entry items
                     app.readTimeEntryItems(values).then( {
                         success: function(items) {
                             console.log("items",items);
-                            app.setValues(values,items,"TimeEntryItemObject")
-                            // stories
-                            app.loadStories(items).then({
-                                success: function(stories) {
-                                    console.log("stories",stories);
-                                    app.setValues(values,stories,"StoryObject");
-                                    // features
-                                    app.readFeatures(stories).then({
-                                        success: function(features) {
-                                            console.log("features",features);
-                                            app.setValues(values,features,"FeatureObject");
-                                            // epics
-                                            app.readEpics(features).then({
-                                                success: function(epics) {
-                                                    console.log("epics",epics);
-                                                    app.setValues(values,epics,"EpicObject");
+                            app.setValues(values,items,"TimeEntryItemObject");
+                            // users
+                            app.readUsers(items).then({
+                                success: function(users) {
+                                    console.log("users",users);
+                                    app.setValues(values,users,"UserObject");
+                                    // tasks
+                                    app.readTasks(items).then({
+                                        success: function(tasks) {
+                                            console.log("tasks",tasks);
+                                            app.setValues(values,tasks,"TaskObject");
+                                            // stories
+                                            app.readStories(items).then({
+                                                success: function(stories) {
+                                                    console.log("stories",stories);
+                                                    app.setValues(values,stories,"StoryObject");
+                                                    // features
+                                                    app.readFeatures(stories).then({
+                                                        success: function(features) {
+                                                            console.log("features",features);
+                                                            app.setValues(values,features,"FeatureObject");
+                                                            // epics
+                                                            app.readEpics(features).then({
+                                                                success: function(epics) {
+                                                                    console.log("epics",epics);
+                                                                    app.setValues(values,epics,"EpicObject");
+                                                                }
+                                                            })
+                                                        }
+                                                    })
                                                 }
-                                            })
+                                            });
                                         }
                                     })
                                 }
-                            });
+                            })
                         }
                     });
                 }
@@ -249,7 +262,7 @@ Ext.define('CustomApp', {
     },
 
     // passed an array of TimeEntryItems. If the entry is 
-    loadStories : function(items) {
+    readStories : function(items) {
 
         var promises = _.map(items,function(item){
             var deferred = Ext.create('Deft.Deferred');
@@ -259,6 +272,46 @@ Ext.define('CustomApp', {
             }
             else {
                 app.readObject('HierarchicalRequirement',workProductRef).then({
+                    success : function(obj) {
+                        deferred.resolve(obj);
+                    }    
+                });
+            }
+            return deferred.promise;
+        });
+        return Deft.Promise.all(promises);
+    },
+
+    // passed an array of TimeEntryItems.
+    readTasks : function(items) {
+
+        var promises = _.map(items,function(item){
+            var deferred = Ext.create('Deft.Deferred');
+            var taskRef = item.get("Task");
+            if (_.isUndefined(taskRef) || _.isNull(taskRef)) {
+                deferred.resolve(null);
+            }
+            else {
+                app.readObject('Task',taskRef).then({
+                    success : function(obj) {
+                        deferred.resolve(obj);
+                    }    
+                });
+            }
+            return deferred.promise;
+        });
+        return Deft.Promise.all(promises);
+    },
+
+    readUsers : function(items) {
+        var promises = _.map(items,function(item){
+            var deferred = Ext.create('Deft.Deferred');
+            var userRef = item.get("User");
+            if (_.isUndefined(userRef) || _.isNull(userRef)) {
+                deferred.resolve(null);
+            }
+            else {
+                app.readObject('User',userRef).then({
                     success : function(obj) {
                         deferred.resolve(obj);
                     }    
@@ -350,31 +403,5 @@ Ext.define('CustomApp', {
 
     _onSelectDate : function(a,b,c) {
         console.log(a,b,c);
-    },
-
-    _export: function(){
-        var grid = this.down('rallygrid');
-        var me = this;
-
-        if ( !grid ) { return; }
-        
-        this.logger.log('_export',grid);
-
-        var filename = Ext.String.format('user-permissions.csv');
-
-        this.setLoading("Generating CSV");
-        Deft.Chain.sequence([
-            function() { return Rally.technicalservices.FileUtilities._getCSVFromCustomBackedGrid(grid) } 
-        ]).then({
-            scope: this,
-            success: function(csv){
-                if (csv && csv.length > 0){
-                    Rally.technicalservices.FileUtilities.saveCSVToFile(csv,filename);
-                } else {
-                    Rally.ui.notify.Notifier.showWarning({message: 'No data to export'});
-                }
-                
-            }
-        }).always(function() { me.setLoading(false); });
     },
 });
