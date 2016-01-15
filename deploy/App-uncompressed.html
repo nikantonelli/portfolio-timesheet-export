@@ -82,7 +82,13 @@ Ext.define('CustomApp', {
             margin: '5 5 5 5',
 	        xtype: 'datefield',
 	        fieldLabel: 'End Date',
-	        value: new Date()
+	        value: new Date(),
+            listeners : {
+                select : function(field,value) {
+                    console.log("value:",value);
+                    app.createTimeValueStore();
+                }
+            }
     	},
         {
             itemId : 'exportButton',
@@ -109,56 +115,7 @@ Ext.define('CustomApp', {
         this._onLoad();
     },
 
-    timeEntryItemColumn : {  
-        text: "Time Entry Item", width:100, 
-        renderer : function(value, metaData, record, rowIdx, colIdx, store, view) {
-            var item = record.get("TimeEntryItemObject");
-            return item ? item.get("WorkProductDisplayString") : "";
-       }
-    },
-
-    projectColumn : {  
-        text: "Project",
-        renderer : function(value, metaData, record, rowIdx, colIdx, store, view) {
-            var item = record.get("TimeEntryItemObject");
-            return item ? item.get("ProjectDisplayString") : "";
-       }
-    },
-
-    epicColumn : {  
-        text: "Epic",
-        renderer : function(value, metaData, record, rowIdx, colIdx, store, view) {
-            var item = record.get("EpicObject");
-            return item ? item.get("FormattedID") + ":" + item.get("Name") : "";
-       }
-    },
-
-    featureColumn : {  
-        text: "Feature",
-        renderer : function(value, metaData, record, rowIdx, colIdx, store, view) {
-            var item = record.get("FeatureObject");
-            return item ? item.get("FormattedID") + ":" + item.get("Name") : "";
-       }
-    },
-
-    taskColumn : {  
-        text: "Task", width:100, 
-        renderer : function(value, metaData, record, rowIdx, colIdx, store, view) {
-            var item = record.get("TimeEntryItemObject");
-            return item ? item.get("TaskDisplayString") : "";
-       }
-    },
-
-    userColumn : {  
-        text: "User", width:100, 
-        renderer : function(value, metaData, record, rowIdx, colIdx, store, view) {
-            var item = record.get("UserObject");
-            return item ? item.get("UserName") : "";
-       }
-    },
-
-
-	_onLoad: function() {
+    _onLoad: function() {
 
         app._loadAStoreWithAPromise( 
             'TypeDefinition',
@@ -174,7 +131,7 @@ Ext.define('CustomApp', {
         });
     },
 
-    createTimeValueStore : function() {
+   createTimeValueStore : function() {
 
         app.showMask("Loading Time Sheet Values");
 
