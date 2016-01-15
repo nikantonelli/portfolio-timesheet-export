@@ -158,6 +158,8 @@ Ext.define('CustomApp', {
 
     createTimeValueStore : function() {
 
+        app.showMask("Loading Time Sheet Values");
+
         // clear the grid
         if (!_.isNull(app.grid)) {
             app.remove(app.grid);
@@ -174,7 +176,16 @@ Ext.define('CustomApp', {
             limit : 'Infinity'
         } ).load({
             callback : function(records, operation, successful) {
+                if (records.length===0) {
+                    app.hideMask();
+                    app.add({html:"No records for this date range",itemId:"norecords"});
+                }
                 app.readRelatedValues(records,function(){
+                    app.hideMask();
+                    var message = app.down("#norecords");
+                    if(!_.isUndefined(message)){
+                        app.remove(message);
+                    }
                     console.log("records",records);   
                     app.createArrayStoreFromRecords(records) ;
                 });
@@ -485,5 +496,15 @@ Ext.define('CustomApp', {
 
     _onSelectDate : function(a,b,c) {
         console.log(a,b,c);
+    },
+
+    showMask: function(msg) {
+        if ( this.getEl() ) { 
+            this.getEl().unmask();
+            this.getEl().mask(msg);
+        }
+    },
+    hideMask: function() {
+        this.getEl().unmask();
     },
 });
