@@ -150,10 +150,18 @@ Ext.define('CustomApp', {
 
 	_onLoad: function() {
 
-        app.exporter = Ext.create("GridExporter");
-
-        app.createTimeValueStore();
-
+        app._loadAStoreWithAPromise( 
+            'TypeDefinition',
+            true,
+            [ { property:"Ordinal", operator:"!=", value:-1} ])
+        .then({
+            success : function(records) {
+                app.piTypes = records;
+                console.log("pitypes:",records);
+                app.exporter = Ext.create("GridExporter");
+                app.createTimeValueStore();
+            }
+        });
     },
 
     createTimeValueStore : function() {
@@ -438,7 +446,9 @@ Ext.define('CustomApp', {
                 deferred.resolve(null);
             } else {
                 var featureRef = story.get("Feature");
-                app.readObject('PortfolioItem/Feature',featureRef).then({
+                var featureType = _.first(app.piTypes).get("TypePath");
+                // app.readObject('PortfolioItem/Feature',featureRef).then({
+                app.readObject(featureType,featureRef).then({   
                     success : function(obj) {
                         deferred.resolve(obj);
                     }    
@@ -456,7 +466,9 @@ Ext.define('CustomApp', {
                 deferred.resolve(null);
             } else {
                 var epicRef = feature.get("Parent");
-                app.readObject('PortfolioItem/Epic',epicRef).then({
+                var epicType = app.piTypes[1].get("TypePath");
+                //app.readObject('PortfolioItem/Epic',epicRef).then({
+                app.readObject(epicType,epicRef).then({ 
                     success : function(obj) {
                         deferred.resolve(obj);
                     }    
@@ -507,4 +519,34 @@ Ext.define('CustomApp', {
     hideMask: function() {
         this.getEl().unmask();
     },
+    _loadAStoreWithAPromise: function( model_name, model_fields, filters,ctx,order) {
+
+        var deferred = Ext.create('Deft.Deferred');
+        var me = this;
+
+        var config = {
+            model: model_name,
+            fetch: model_fields,
+            filters: filters,
+            limit: 'Infinity'
+        };
+        if (!_.isUndefined(ctx)&&!_.isNull(ctx)) {
+            config.context = ctx;
+        }
+        if (!_.isUndefined(order)&&!_.isNull(order)) {
+            config.order = order;
+        }
+
+        Ext.create('Rally.data.wsapi.Store', config ).load({
+            callback : function(records, operation, successful) {
+                if (successful){
+                    deferred.resolve(records);
+                } else {
+                    deferred.reject('Problem loading: ' + operation.error.errors.join('. '));
+                }
+            }
+        });
+        return deferred.promise;
+    },
+
 });
