@@ -200,13 +200,14 @@ Ext.define('CustomApp', {
         var hasValue = function(value) {
             return !_.isUndefined(value) && !_.isNull(value) && value !== "";
         }
-        if (hasValue(record.get("TaskObject").get(field)))
+        console.log("record",record);
+        if (hasValue(record.get("TaskObject")) && hasValue(record.get("TaskObject").get(field)))
             return record.get("TaskObject").get(field);
-        if (hasValue(record.get("StoryObject").get(field)))
+        if (hasValue(record.get("StoryObject")) && hasValue(record.get("StoryObject").get(field)))
             return record.get("StoryObject").get(field);
-        if (hasValue(record.get("FeatureObject").get(field)))
+        if (hasValue(record.get("FeatureObject")) && hasValue(record.get("FeatureObject").get(field)))
             return record.get("FeatureObject").get(field);
-        if (hasValue(record.get("EpicObject").get(field)))
+        if (hasValue(record.get("EpicObject")) && hasValue(record.get("EpicObject").get(field)))
             return record.get("EpicObject").get(field);
         return null;
     },
@@ -238,13 +239,13 @@ Ext.define('CustomApp', {
                 "TaskDisplayString" :      r.get("TimeEntryItemObject").get("TaskDisplayString"),
                 "ProjectDisplayString" :   r.get("TimeEntryItemObject").get("ProjectDisplayString"),
                 "WorkProductDisplayString":r.get("TimeEntryItemObject").get("WorkProductDisplayString"),
-                "FeatureID" :   r.get("FeatureObject").get("FormattedID"),
-                "FeatureName" : r.get("FeatureObject").get("Name"),
+                "FeatureID" :   r.get("FeatureObject") ? r.get("FeatureObject").get("FormattedID") : null,
+                "FeatureName" : r.get("FeatureObject") ? r.get("FeatureObject").get("Name") : null,
                 'c_SAPNetwork' : app.getFieldValue(r,'c_SAPNetwork'),
                 'c_SAPOperation' : app.getFieldValue(r,'c_SAPOperation'),
                 'c_SAPSubOperation' : app.getFieldValue(r,'c_SAPSubOperation'),
-                'EpicID' : r.get("EpicObject").get("FormattedID"),
-                'EpicName' : r.get("EpicObject").get("Name"),
+                'EpicID' : r.get("EpicObject") ? r.get("EpicObject").get("FormattedID") : null,
+                'EpicName' : r.get("EpicObject") ? r.get("EpicObject").get("Name") : null,
                 'Hours' : r.get('Hours'),
                 'ObjectID' : r.get("TimeEntryItemObject").get("ObjectID"),
                 'Date' : moment(r.get("DateVal")).format("YYYYMMDD"),
@@ -503,14 +504,8 @@ Ext.define('CustomApp', {
     dateFormat : 'Y-m-d',
 
     exportGrid: function(grid) {
-        if (Ext.isIE) {
-            this._ieToExcel(grid);
-
-        } else {
-            var data = this._getCSV(grid);
-            // window.location = 'data:text/csv;charset=utf8,' + encodeURIComponent(data);
-            return "<a href='data:text/csv;charset=utf8," + encodeURIComponent(data) + "' download='export.csv'>Click to download file</a>";
-        }
+        var data = this._getCSV(grid);
+        return "<a href='data:text/csv;charset=utf8," + encodeURIComponent(data) + "' download='export.csv'>Click to download file</a>";
     },
 
     _escapeForCSV: function(string) {
@@ -527,30 +522,6 @@ Ext.define('CustomApp', {
 
     _getFieldText: function(fieldData,record,col,index) {
         var text;
-
-        // console.log("record",record);
-
-        // User Hours   Last Updated    Epic    Feature
-        // if (!_.isUndefined(col) && col.text === "Date")
-        //     return record.raw.DateVal;
-
-        // if (!_.isUndefined(col) && col.text === "Cost Center")
-        //     return record.get("UserObject").get("CostCenter");
-
-        // if (!_.isUndefined(col) && col.text === "Project")
-        //     return record.get("TimeEntryItemObject").get("Project")._refObjectName;
-        // // Time Entry Item Task    User    Hours   Last Updated    Epic    Feature
-        // if (!_.isUndefined(col) && col.text === "Time Entry Item")
-        //     return record.get("TimeEntryItemObject").get("WorkProductDisplayString");
-        // if (!_.isUndefined(col) && col.text === "Task")
-        //     return record.get("TimeEntryItemObject").get("TaskDisplayString");
-        // if (!_.isUndefined(col) && col.text === "User")
-        //     return record.get("UserObject").get("UserName");
-        // if (!_.isUndefined(col) && col.text === "Epic")
-        //     return record.get("EpicObject") ? record.get("EpicObject").get("FormattedID") + ":" + record.get("EpicObject").get("Name") : "" ;
-        // if (!_.isUndefined(col) && col.text === "Feature")
-        //     return record.get("FeatureObject") ? record.get("FeatureObject").get("FormattedID") + ":" + record.get("FeatureObject").get("Name") : "" ;
-
 
         if (fieldData == null || fieldData == undefined) {
             text = '';
@@ -605,9 +576,6 @@ Ext.define('CustomApp', {
         _.each( store.data.items, function(record) {
 
             Ext.Array.each(cols, function(col, index) {
-            // Ext.Array.each(sortedCols, function(col) {
-
-                // var index = headerIndex[col.text];
             
                 if (col.hidden != true) {
                     var fieldName   = col.dataIndex;
@@ -619,56 +587,8 @@ Ext.define('CustomApp', {
         });
 
         return data;
-    },
-
-    _ieGetGridData : function(grid, sheet) {
-        var that            = this;
-        var resourceItems   = grid.store.data.items;
-        var cols            = grid.columns;
-
-        Ext.Array.each(cols, function(col, colIndex) {
-            if (col.hidden != true) {
-                
-                sheet.cells(1,colIndex + 1).value = col.text;
-            }
-        });
-
-        var rowIndex = 2;
-        grid.store.each(function(record) {
-            var entry   = record.getData();
-
-            Ext.Array.each(cols, function(col, colIndex) {
-                if (col.hidden != true) {
-                    var fieldName   = col.dataIndex;
-                    var text        = entry[fieldName];
-                    var value       = that._getFieldText(text);
-
-                    sheet.cells(rowIndex, colIndex+1).value = value;
-                }
-            });
-            rowIndex++;
-        });
-    },
-
-    _ieToExcel: function (grid) {
-        if (window.ActiveXObject){
-            var  xlApp, xlBook;
-            try {
-                xlApp = new ActiveXObject("Excel.Application"); 
-                xlBook = xlApp.Workbooks.Add();
-            } catch (e) {
-                Ext.Msg.alert('Error', 'For the export to work in IE, you have to enable a security setting called "Initialize and script ActiveX control not marked as safe" from Internet Options -> Security -> Custom level..."');
-                return;
-            }
-
-            xlBook.worksheets("Sheet1").activate;
-            var XlSheet = xlBook.activeSheet;
-            xlApp.visible = true; 
-
-           this._ieGetGridData(grid, XlSheet);
-           XlSheet.columns.autofit; 
-        }
     }
+
 });
 
             Rally.launchApp('CustomApp', {

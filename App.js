@@ -190,13 +190,14 @@ Ext.define('CustomApp', {
         var hasValue = function(value) {
             return !_.isUndefined(value) && !_.isNull(value) && value !== "";
         }
-        if (hasValue(record.get("TaskObject").get(field)))
+        console.log("record",record);
+        if (hasValue(record.get("TaskObject")) && hasValue(record.get("TaskObject").get(field)))
             return record.get("TaskObject").get(field);
-        if (hasValue(record.get("StoryObject").get(field)))
+        if (hasValue(record.get("StoryObject")) && hasValue(record.get("StoryObject").get(field)))
             return record.get("StoryObject").get(field);
-        if (hasValue(record.get("FeatureObject").get(field)))
+        if (hasValue(record.get("FeatureObject")) && hasValue(record.get("FeatureObject").get(field)))
             return record.get("FeatureObject").get(field);
-        if (hasValue(record.get("EpicObject").get(field)))
+        if (hasValue(record.get("EpicObject")) && hasValue(record.get("EpicObject").get(field)))
             return record.get("EpicObject").get(field);
         return null;
     },
@@ -228,13 +229,13 @@ Ext.define('CustomApp', {
                 "TaskDisplayString" :      r.get("TimeEntryItemObject").get("TaskDisplayString"),
                 "ProjectDisplayString" :   r.get("TimeEntryItemObject").get("ProjectDisplayString"),
                 "WorkProductDisplayString":r.get("TimeEntryItemObject").get("WorkProductDisplayString"),
-                "FeatureID" :   r.get("FeatureObject").get("FormattedID"),
-                "FeatureName" : r.get("FeatureObject").get("Name"),
+                "FeatureID" :   r.get("FeatureObject") ? r.get("FeatureObject").get("FormattedID") : null,
+                "FeatureName" : r.get("FeatureObject") ? r.get("FeatureObject").get("Name") : null,
                 'c_SAPNetwork' : app.getFieldValue(r,'c_SAPNetwork'),
                 'c_SAPOperation' : app.getFieldValue(r,'c_SAPOperation'),
                 'c_SAPSubOperation' : app.getFieldValue(r,'c_SAPSubOperation'),
-                'EpicID' : r.get("EpicObject").get("FormattedID"),
-                'EpicName' : r.get("EpicObject").get("Name"),
+                'EpicID' : r.get("EpicObject") ? r.get("EpicObject").get("FormattedID") : null,
+                'EpicName' : r.get("EpicObject") ? r.get("EpicObject").get("Name") : null,
                 'Hours' : r.get('Hours'),
                 'ObjectID' : r.get("TimeEntryItemObject").get("ObjectID"),
                 'Date' : moment(r.get("DateVal")).format("YYYYMMDD"),
