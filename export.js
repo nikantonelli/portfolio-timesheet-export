@@ -31,25 +31,25 @@ Ext.define("GridExporter", {
         // console.log("record",record);
 
         // User Hours   Last Updated    Epic    Feature
-        if (!_.isUndefined(col) && col.text === "Date")
-            return record.raw.DateVal;
+        // if (!_.isUndefined(col) && col.text === "Date")
+        //     return record.raw.DateVal;
 
-        if (!_.isUndefined(col) && col.text === "Cost Center")
-            return record.get("UserObject").get("CostCenter");
+        // if (!_.isUndefined(col) && col.text === "Cost Center")
+        //     return record.get("UserObject").get("CostCenter");
 
-        if (!_.isUndefined(col) && col.text === "Project")
-            return record.get("TimeEntryItemObject").get("Project")._refObjectName;
-        // Time Entry Item Task    User    Hours   Last Updated    Epic    Feature
-        if (!_.isUndefined(col) && col.text === "Time Entry Item")
-            return record.get("TimeEntryItemObject").get("WorkProductDisplayString");
-        if (!_.isUndefined(col) && col.text === "Task")
-            return record.get("TimeEntryItemObject").get("TaskDisplayString");
-        if (!_.isUndefined(col) && col.text === "User")
-            return record.get("UserObject").get("UserName");
-        if (!_.isUndefined(col) && col.text === "Epic")
-            return record.get("EpicObject") ? record.get("EpicObject").get("FormattedID") + ":" + record.get("EpicObject").get("Name") : "" ;
-        if (!_.isUndefined(col) && col.text === "Feature")
-            return record.get("FeatureObject") ? record.get("FeatureObject").get("FormattedID") + ":" + record.get("FeatureObject").get("Name") : "" ;
+        // if (!_.isUndefined(col) && col.text === "Project")
+        //     return record.get("TimeEntryItemObject").get("Project")._refObjectName;
+        // // Time Entry Item Task    User    Hours   Last Updated    Epic    Feature
+        // if (!_.isUndefined(col) && col.text === "Time Entry Item")
+        //     return record.get("TimeEntryItemObject").get("WorkProductDisplayString");
+        // if (!_.isUndefined(col) && col.text === "Task")
+        //     return record.get("TimeEntryItemObject").get("TaskDisplayString");
+        // if (!_.isUndefined(col) && col.text === "User")
+        //     return record.get("UserObject").get("UserName");
+        // if (!_.isUndefined(col) && col.text === "Epic")
+        //     return record.get("EpicObject") ? record.get("EpicObject").get("FormattedID") + ":" + record.get("EpicObject").get("Name") : "" ;
+        // if (!_.isUndefined(col) && col.text === "Feature")
+        //     return record.get("FeatureObject") ? record.get("FeatureObject").get("FormattedID") + ":" + record.get("FeatureObject").get("Name") : "" ;
 
 
         if (fieldData == null || fieldData == undefined) {
@@ -89,8 +89,6 @@ Ext.define("GridExporter", {
         var store   = grid.store;
         var data    = '';
         console.log("cols",cols);
-
-        cols.push({ text : "Cost Center"});
 
         var that = this;
         Ext.Array.each(cols, function(col, index) {

@@ -56,8 +56,7 @@ Ext.define('CustomApp', {
                     }
                     startDateCmp.setValue( start );startDateCmp.getValue();
                     endDateCmp.setValue( end ); endDateCmp.getValue();
-                    // var app = _.first(Ext.ComponentQuery.query("#app"));
-                    app._onSelect();
+                    app.createTimeValueStore();
                 }
             }
         },
@@ -82,9 +81,9 @@ Ext.define('CustomApp', {
             text : 'Export',
             handler : function() {
                 // export
-                var grid = app.down("#grid");
+                // var grid = app.down("#grid");
                 var link = app.down("#exportLink");
-                link.update(app.exporter.exportGrid(grid));
+                link.update(app.exporter.exportGrid(app.grid));
             }
         },
         {
@@ -153,76 +152,159 @@ Ext.define('CustomApp', {
 
         app.exporter = Ext.create("GridExporter");
 
-        var cols = [
-            { dataIndex : 'DateVal', text: 'Date'},
-            app.projectColumn,
-            app.timeEntryItemColumn,
-            app.taskColumn,
-            app.userColumn,
-            'Hours',
-            'LastUpdated',
-            { dataIndex : 'TimeEntryItem', text: 'TimeEntryItem',hidden:true},
-            app.epicColumn,
-            app.featureColumn
+        app.createTimeValueStore();
+
+    },
+
+    createTimeValueStore : function() {
+
+        // clear the grid
+        if (!_.isNull(app.grid)) {
+            app.remove(app.grid);
+        }
+
+
+        var filter = app._getDateFilter();
+        console.log(filter);
+
+        Ext.create('Rally.data.wsapi.Store', {
+            model : "TimeEntryValue",
+            fetch : true,
+            filters : filter,
+            limit : 'Infinity'
+        } ).load({
+            callback : function(records, operation, successful) {
+                app.readRelatedValues(records,function(){
+                    console.log("records",records);   
+                    app.createArrayStoreFromRecords(records) ;
+                });
+                
+            }
+        });
+
+    },
+
+    getFieldValue : function(record, field) {
+        // returns the most specific value for a field
+        // ie. Task -> Story -> Feature -> Epic
+        var hasValue = function(value) {
+            return !_.isUndefined(value) && !_.isNull(value) && value !== "";
+        }
+        if (hasValue(record.get("TaskObject").get(field)))
+            return record.get("TaskObject").get(field);
+        if (hasValue(record.get("StoryObject").get(field)))
+            return record.get("StoryObject").get(field);
+        if (hasValue(record.get("FeatureObject").get(field)))
+            return record.get("FeatureObject").get(field);
+        if (hasValue(record.get("EpicObject").get(field)))
+            return record.get("EpicObject").get(field);
+        return null;
+    },
+
+    createArrayStoreFromRecords : function(records) {
+
+        var fields = [
+               {name: 'UserName'},
+               {name: 'TaskDisplayString'},
+               {name: 'ProjectDisplayString'},
+               {name: 'WorkProductDisplayString'},
+               {name: 'FeatureID'},
+               {name: 'FeatureName'},
+               {name: 'c_SAPNetwork'},
+               {name: 'c_SAPOperation'},
+               {name: 'c_SAPSubOperation'},
+               {name: 'EpicID'},
+               {name: 'EpicName'},
+               {name: 'Hours'},
+               {name: 'ObjectID'},
+               {name: 'Date'},
+               {name: 'c_KMDEmployeeID'}
         ];
 
-	    this.add({
-	        xtype: 'rallygrid',
-            itemId : 'grid',
-	        columnCfgs: cols,
-	        context: this.getContext(),
-	        storeConfig: {
-	            model: 'TimeEntryValue'
-	        },
-            listeners:  {
-                load : function(rows) {
-                    var values = rows.data.items;
-
-                    // time entry items
-                    app.readTimeEntryItems(values).then( {
-                        success: function(items) {
-                            console.log("items",items);
-                            app.setValues(values,items,"TimeEntryItemObject");
-                            // users
-                            app.readUsers(items).then({
-                                success: function(users) {
-                                    console.log("users",users);
-                                    app.setValues(values,users,"UserObject");
-                                    // tasks
-                                    app.readTasks(items).then({
-                                        success: function(tasks) {
-                                            console.log("tasks",tasks);
-                                            app.setValues(values,tasks,"TaskObject");
-                                            // stories
-                                            app.readStories(items).then({
-                                                success: function(stories) {
-                                                    console.log("stories",stories);
-                                                    app.setValues(values,stories,"StoryObject");
-                                                    // features
-                                                    app.readFeatures(stories).then({
-                                                        success: function(features) {
-                                                            console.log("features",features);
-                                                            app.setValues(values,features,"FeatureObject");
-                                                            // epics
-                                                            app.readEpics(features).then({
-                                                                success: function(epics) {
-                                                                    console.log("epics",epics);
-                                                                    app.setValues(values,epics,"EpicObject");
-                                                                }
-                                                            })
-                                                        }
-                                                    })
-                                                }
-                                            });
-                                        }
-                                    })
-                                }
-                            })
-                        }
-                    });
-                }
+        // convert records into a json data structure
+        var data = _.map(records,function(r){
+            return {
+                "UserName" :               r.get("UserObject").get("UserName"),
+                "TaskDisplayString" :      r.get("TimeEntryItemObject").get("TaskDisplayString"),
+                "ProjectDisplayString" :   r.get("TimeEntryItemObject").get("ProjectDisplayString"),
+                "WorkProductDisplayString":r.get("TimeEntryItemObject").get("WorkProductDisplayString"),
+                "FeatureID" :   r.get("FeatureObject").get("FormattedID"),
+                "FeatureName" : r.get("FeatureObject").get("Name"),
+                'c_SAPNetwork' : app.getFieldValue(r,'c_SAPNetwork'),
+                'c_SAPOperation' : app.getFieldValue(r,'c_SAPOperation'),
+                'c_SAPSubOperation' : app.getFieldValue(r,'c_SAPSubOperation'),
+                'EpicID' : r.get("EpicObject").get("FormattedID"),
+                'EpicName' : r.get("EpicObject").get("Name"),
+                'Hours' : r.get('Hours'),
+                'ObjectID' : r.get("TimeEntryItemObject").get("ObjectID"),
+                'Date' : moment(r.get("DateVal")).format("YYYYMMDD"),
+                'c_KMDEmployeeID' : r.get("UserObject").get("c_KMDEmployeeID")
             }
-	    });
+        });
+
+        var store = Ext.create('Ext.data.JsonStore', {
+            fields: fields,
+            data : data
+        });
+
+        app.grid = new Ext.grid.GridPanel({
+          frame: true,
+          itemId : 'grid',
+          title: 'TimeSheetData',
+          store: store,
+          columns: _.map(fields,function(f){return {text:f.name,dataIndex:f.name} })
+        });
+
+        this.add(app.grid);
+           
+    },
+
+    readRelatedValues : function(values,callback) {
+
+        // time entry items
+        app.readTimeEntryItems(values).then( {
+            success: function(items) {
+                console.log("items",items);
+                app.setValues(values,items,"TimeEntryItemObject");
+                // users
+                app.readUsers(items).then({
+                    success: function(users) {
+                        console.log("users",users);
+                        app.setValues(values,users,"UserObject");
+                        // tasks
+                        app.readTasks(items).then({
+                            success: function(tasks) {
+                                console.log("tasks",tasks);
+                                app.setValues(values,tasks,"TaskObject");
+                                // stories
+                                app.readStories(items).then({
+                                    success: function(stories) {
+                                        console.log("stories",stories);
+                                        app.setValues(values,stories,"StoryObject");
+                                        // features
+                                        app.readFeatures(stories).then({
+                                            success: function(features) {
+                                                console.log("features",features);
+                                                app.setValues(values,features,"FeatureObject");
+                                                // epics
+                                                app.readEpics(features).then({
+                                                    success: function(epics) {
+                                                        console.log("epics",epics);
+                                                        app.setValues(values,epics,"EpicObject");
+                                                        callback();
+                                                    }
+                                                })
+                                            }
+                                        })
+                                    }
+                                });
+                            }
+                        })
+                    }
+                })
+            }
+        });
+
     },
 
     setValues : function(items, values, attrName) {
@@ -363,7 +445,7 @@ Ext.define('CustomApp', {
                 deferred.resolve(null);
             } else {
                 var epicRef = feature.get("Parent");
-                app.readObject('PortfolioItem/Initiative',epicRef).then({
+                app.readObject('PortfolioItem/Epic',epicRef).then({
                     success : function(obj) {
                         deferred.resolve(obj);
                     }    
