@@ -4,6 +4,8 @@ Ext.define("GridExporter", {
 
     exportGrid: function(grid) {
         var data = this._getCSV(grid);
+        // fix: ' character was causing termination of csv file
+        data = data.replace(/\'/g, "")
         return "<a href='data:text/csv;charset=utf8," + encodeURIComponent(data) + "' download='export.csv'>Click to download file</a>";
     },
 
@@ -59,6 +61,7 @@ Ext.define("GridExporter", {
         var store   = grid.store;
         var data    = '';
         console.log("cols",cols);
+        console.log(store.data.items.length);
 
         var that = this;
         Ext.Array.each(cols, function(col, index) {
@@ -72,7 +75,8 @@ Ext.define("GridExporter", {
         });
         data += "\n";
 
-        _.each( store.data.items, function(record) {
+        _.each( store.data.items, function(record,i) {
+            console.log(i);
 
             Ext.Array.each(cols, function(col, index) {
             

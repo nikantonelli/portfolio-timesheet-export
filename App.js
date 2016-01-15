@@ -190,7 +190,6 @@ Ext.define('CustomApp', {
         var hasValue = function(value) {
             return !_.isUndefined(value) && !_.isNull(value) && value !== "";
         }
-        console.log("record",record);
         if (hasValue(record.get("TaskObject")) && hasValue(record.get("TaskObject").get(field)))
             return record.get("TaskObject").get(field);
         if (hasValue(record.get("StoryObject")) && hasValue(record.get("StoryObject").get(field)))
