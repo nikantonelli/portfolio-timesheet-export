@@ -13,11 +13,11 @@ Ext.define('CustomApp', {
     extend: 'Rally.app.App',
     componentCls: 'app',
     stateful: true,
-    itemId : 'app',
+    id : 'app',
     cache : [],
     items : [
         {
-            itemId : 'panel',
+            id : 'panel',
             xtype : 'panel',
             layout : 'column',
             items : [
@@ -40,9 +40,8 @@ Ext.define('CustomApp', {
                     listeners : {
                         scope : this,
                         select : function(list,item) {
-                            var panel = _.first(Ext.ComponentQuery.query("#panel"));
-                            var startDateCmp = panel.down('#startDate');
-                            var endDateCmp = panel.down('#endDate');
+                            var startDateCmp = Ext.getCmp('startDate');
+                            var endDateCmp = Ext.getCmp('endDate');
                             var start,end;
 
                             var dt = new Date();
@@ -54,11 +53,11 @@ Ext.define('CustomApp', {
                                     break;
                                 case 'This Week':
                                     start = Ext.Date.clearTime(Ext.Date.subtract(dt, Ext.Date.DAY, dt.getDay()));   //Sunday AM
-                                    end   = Ext.Date.clearTime(Ext.Date.add(start, Ext.Date.DAY, ((7 * 24 * 60 * 60 * 1000) - 1)));   //Saturday PM
+                                    end   = Ext.Date.clearTime(Ext.Date.add(start, Ext.Date.MILLI, ((7 * 24 * 60 * 60 * 1000) - 1)));   //Saturday PM
                                     break;
                                 case 'Last Week':
                                     start = Ext.Date.clearTime(Ext.Date.subtract(dt, Ext.Date.DAY, 7 + dt.getDay()));   //Sunday AM
-                                    end   = Ext.Date.clearTime(Ext.Date.add(start, Ext.Date.DAY, ((7 * 24 * 60 * 60 * 1000) - 1)));   //Saturday PM
+                                    end   = Ext.Date.clearTime(Ext.Date.add(start, Ext.Date.MILLI, ((7 * 24 * 60 * 60 * 1000) - 1)));   //Saturday PM
                                     break;
                                 case 'This Month':
                                     start = new Date("1/" + dt.getMonth() + 1 + "/" + dt.getFullYear());
@@ -70,6 +69,7 @@ Ext.define('CustomApp', {
                                     end   = Ext.Date.subtract(Ext.Date.add(start, Ext.Date.MONTH,1), Ext.Date.MILLI, 1);
                                     break;
                             }
+
                             startDateCmp.setValue( start );startDateCmp.getValue();
                             endDateCmp.setValue( end ); endDateCmp.getValue();
                             app.createTimeValueStore();
@@ -77,7 +77,7 @@ Ext.define('CustomApp', {
                      }
                 },
                 {
-                    itemId : 'startDate',
+                    id : 'startDate',
                     margin: '5 5 5 5',
                     xtype: 'datefield',
                     format: 'd M Y',
@@ -87,7 +87,7 @@ Ext.define('CustomApp', {
                     value: new Date()
                 },
                 {
-                    itemId : 'endDate',
+                    id : 'endDate',
                     margin: '5 5 5 5',
                     xtype: 'datefield',
                     stateful: true,
@@ -126,7 +126,7 @@ Ext.define('CustomApp', {
                                     xtype: 'rallybutton',
                                     text: 'SAP XML',
                                     handler: function () {
-                                        Ext.Msg.alert('Not implemented yet');
+                                        app.exporter.exportSAPXML(app.grid);
                                         saveDialog.destroy();
                                     }
                                 },
@@ -185,10 +185,14 @@ Ext.define('CustomApp', {
    app.showMask("Loading Time Sheet Values");
 
    // clear the grid
-   if (!_.isNull(app.grid)) {
-   app.remove(app.grid);
-   }
+    if (!_.isNull(app.grid)) {
+        app.remove(app.grid);
+    }
 
+    var nr = null;
+    if ((nr = Ext.getCmp('noRecords'))){
+        nr.destroy();
+    }
 
    var filter = app._getDateFilter();
    console.log(filter);
@@ -202,7 +206,7 @@ Ext.define('CustomApp', {
                        callback : function(records, operation, successful) {
                        if (records.length===0) {
                        app.hideMask();
-                       app.add({html:"No records for this date range",itemId:"norecords"});
+                       app.add({html:"No records for this date range",itemId:"norecords", id: "noRecords"});
                        }
                        app.readRelatedValues(records,function(){
                                              app.hideMask();
@@ -500,9 +504,8 @@ Ext.define('CustomApp', {
    
    
    _getDateFilter: function() {
-   var panel = _.first(Ext.ComponentQuery.query("#panel"));
-   var startDateCmp = panel.down('#startDate').getValue();
-   var endDateCmp = panel.down('#endDate').getValue();
+   var startDateCmp = Ext.getCmp('startDate').getValue();
+   var endDateCmp = Ext.getCmp('endDate').getValue();
    var start = Rally.util.DateTime.toIsoString(startDateCmp, false);
    var end   = Rally.util.DateTime.toIsoString(endDateCmp, false);
    
@@ -573,6 +576,11 @@ Ext.define('CustomApp', {
     //dateFormat : 'Y-m-d g:i',
     dateFormat : 'Y-m-d',
 
+    inheritableStatics: {
+        XmlFileHeader: '<?xml version="1.0"?>',
+        XmlFileExtension: '.xml.txt'
+    },
+
     _downloadFiles: function( files ) {
         if ( files.length )
         {
@@ -584,7 +592,7 @@ Ext.define('CustomApp', {
 
             var ml = Ext.DomHelper.insertAfter(window.document.getElementById('tsGrid'), href);
             ml.click();
-            ml.remove();
+//            ml.remove();
             this._downloadFiles(files);
         }
     },
@@ -601,13 +609,74 @@ Ext.define('CustomApp', {
 
     },
 
+    _XMLIndent: function(index, tag, leaf, data) {
+        var text = '\n';
+        for (var i = 0; i < index; i++) text += '\t';
+        text += '<' + tag + '>';
+        text += data;
+        if (!leaf) { text += '\n'; for (i = 0; i < index; i++) text += '\t';}
+        text += '</' + tag + '>';
+        return text;
+
+    },
+
+    _addSAPTrailerFile: function(data) {
+
+        var file = 'E1BPCATS8';
+        var format = 'data:text/text;charset=utf8';
+        var text = this.self.XmlFileHeader;
+
+        text += "\n<" + file + ">";
+        _.each(data, function(record) {
+            text += this._XMLIndent(1, 'Datarow', false,
+                this._XMLIndent(2, 'GUID', true, record.get('ObjectID')) +
+                this._XMLIndent(2, 'ROW', true, '') +
+                this._XMLIndent(2, 'FORMAT_COL', true, '*') +
+                this._XMLIndent(2, 'TEXT_LINE', true, '')
+            );
+        }, this);
+
+        text += "</" + file + ">\n";
+        file += this.self.XmlFileExtension;
+        return [ file, format, text ];
+    },
+
+    _addSAPDataFile: function(data) {
+
+        var file = 'E1BPCATS1';
+        var format = 'data:text/text;charset=utf8';
+        var text = this.self.XmlFileHeader;
+
+        text += "\n<" + file + ">";
+        _.each(data, function(record) {
+            text += this._XMLIndent(1, 'Datarow', false,
+                this._XMLIndent(2, 'GUID', true, record.get('ObjectID') || '') +
+                this._XMLIndent(2, 'WORKDATE', true, Ext.Date.format(record.get('Date'), 'Ymd')) +
+                this._XMLIndent(2, 'EMPLOYEENUMBER', true, record.get('c_KMDEmployeeID') || '') +
+                this._XMLIndent(2, 'ACTTYPE', true, '') +
+                this._XMLIndent(2, 'NETWORK', true, record.get('c_SAPNetwork') || '') +
+                this._XMLIndent(2, 'ACTIVITY', true, record.get('c_SAPOperation') || '') +
+                this._XMLIndent(2, 'SUB_ACTIVITY', true, record.get('c_SAPSubOperation') || '') +
+                this._XMLIndent(2, 'CATSHOURS', true, record.get('Hours')) +
+                this._XMLIndent(2, 'UNIT', true, 'H') +
+                this._XMLIndent(2, 'SHORTTEXT', true, record.get('TaskDisplayString') || record.get('WorkProductDisplayString') || '') +
+                this._XMLIndent(2, 'LONGTEXT', true, '')
+            );
+        }, this);
+        text += "</" + file + ">\n";
+        file += this.self.XmlFileExtension;
+        return [ file, format, text ];
+
+    },
+
     exportSAPXML: function(grid) {
 
         var filesToSave = [];
 
-        filesToSave.concat ( this._addSAPHeaderFile());
-        filesToSave.concat ( this._addSAPDataFile());
-        filesToSave.concat ( this._addSAPTrailerFile());
+        if ( grid && grid.store && grid.store.data ) {
+            var data = grid.store.data.items;
+            this._downloadFiles( filesToSave.concat( this._addSAPDataFile(data), this._addSAPTrailerFile(data) ));
+        }
 
     },
 

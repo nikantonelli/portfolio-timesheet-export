@@ -4,11 +4,11 @@ Ext.define('CustomApp', {
     extend: 'Rally.app.App',
     componentCls: 'app',
     stateful: true,
-    itemId : 'app',
+    id : 'app',
     cache : [],
     items : [
         {
-            itemId : 'panel',
+            id : 'panel',
             xtype : 'panel',
             layout : 'column',
             items : [
@@ -31,9 +31,8 @@ Ext.define('CustomApp', {
                     listeners : {
                         scope : this,
                         select : function(list,item) {
-                            var panel = _.first(Ext.ComponentQuery.query("#panel"));
-                            var startDateCmp = panel.down('#startDate');
-                            var endDateCmp = panel.down('#endDate');
+                            var startDateCmp = Ext.getCmp('startDate');
+                            var endDateCmp = Ext.getCmp('endDate');
                             var start,end;
 
                             var dt = new Date();
@@ -45,11 +44,11 @@ Ext.define('CustomApp', {
                                     break;
                                 case 'This Week':
                                     start = Ext.Date.clearTime(Ext.Date.subtract(dt, Ext.Date.DAY, dt.getDay()));   //Sunday AM
-                                    end   = Ext.Date.clearTime(Ext.Date.add(start, Ext.Date.DAY, ((7 * 24 * 60 * 60 * 1000) - 1)));   //Saturday PM
+                                    end   = Ext.Date.clearTime(Ext.Date.add(start, Ext.Date.MILLI, ((7 * 24 * 60 * 60 * 1000) - 1)));   //Saturday PM
                                     break;
                                 case 'Last Week':
                                     start = Ext.Date.clearTime(Ext.Date.subtract(dt, Ext.Date.DAY, 7 + dt.getDay()));   //Sunday AM
-                                    end   = Ext.Date.clearTime(Ext.Date.add(start, Ext.Date.DAY, ((7 * 24 * 60 * 60 * 1000) - 1)));   //Saturday PM
+                                    end   = Ext.Date.clearTime(Ext.Date.add(start, Ext.Date.MILLI, ((7 * 24 * 60 * 60 * 1000) - 1)));   //Saturday PM
                                     break;
                                 case 'This Month':
                                     start = new Date("1/" + dt.getMonth() + 1 + "/" + dt.getFullYear());
@@ -61,6 +60,7 @@ Ext.define('CustomApp', {
                                     end   = Ext.Date.subtract(Ext.Date.add(start, Ext.Date.MONTH,1), Ext.Date.MILLI, 1);
                                     break;
                             }
+
                             startDateCmp.setValue( start );startDateCmp.getValue();
                             endDateCmp.setValue( end ); endDateCmp.getValue();
                             app.createTimeValueStore();
@@ -68,7 +68,7 @@ Ext.define('CustomApp', {
                      }
                 },
                 {
-                    itemId : 'startDate',
+                    id : 'startDate',
                     margin: '5 5 5 5',
                     xtype: 'datefield',
                     format: 'd M Y',
@@ -78,7 +78,7 @@ Ext.define('CustomApp', {
                     value: new Date()
                 },
                 {
-                    itemId : 'endDate',
+                    id : 'endDate',
                     margin: '5 5 5 5',
                     xtype: 'datefield',
                     stateful: true,
@@ -171,44 +171,48 @@ Ext.define('CustomApp', {
          });
    },
 
-   createTimeValueStore : function() {
+    createTimeValueStore : function() {
 
-   app.showMask("Loading Time Sheet Values");
+        app.showMask("Loading Time Sheet Values");
 
-   // clear the grid
-   if (!_.isNull(app.grid)) {
-   app.remove(app.grid);
-   }
+       // clear the grid
+        if (!_.isNull(app.grid)) {
+            app.remove(app.grid);
+        }
 
+        var nr = null;
+        if ((nr = Ext.getCmp('noRecords'))){
+            nr.destroy();
+        }
 
-   var filter = app._getDateFilter();
-   console.log(filter);
+        var filter = app._getDateFilter();
+        console.log(filter);
 
-   Ext.create('Rally.data.wsapi.Store', {
-              model : "TimeEntryValue",
-              fetch : true,
-              filters : filter,
-              limit : 'Infinity'
-              } ).load({
-                       callback : function(records, operation, successful) {
-                       if (records.length===0) {
-                       app.hideMask();
-                       app.add({html:"No records for this date range",itemId:"norecords"});
-                       }
-                       app.readRelatedValues(records,function(){
-                                             app.hideMask();
-                                             var message = app.down("#norecords");
-                                             if(!_.isUndefined(message)){
-                                             app.remove(message);
-                                             }
-                                             console.log("records",records);
-                                             app.createArrayStoreFromRecords(records) ;
-                                             });
-
-                       }
-                       });
-
-   },
+        Ext.create('Rally.data.wsapi.Store', {
+            model : "TimeEntryValue",
+            fetch : true,
+            filters : filter,
+            limit : 'Infinity'
+        }).load({
+            callback : function(records, operation, successful) {
+                if (records.length===0) {
+                    app.hideMask();
+                    app.add({html:"No records for this date range",itemId:"norecords", id: "noRecords"});
+                }
+                app.readRelatedValues(records,
+                    function(){
+                        app.hideMask();
+                        var message = app.down("#norecords");
+                        if(!_.isUndefined(message)){
+                            app.remove(message);
+                        }
+                        console.log("records",records);
+                        app.createArrayStoreFromRecords(records) ;
+                    }
+                );
+            }
+        });
+    },
 
    getFieldValue : function(record, field) {
    // returns the most specific value for a field
@@ -248,6 +252,7 @@ Ext.define('CustomApp', {
                  ];
 
    // convert records into a json data structure
+   debugger;
    var data = _.map(records,function(r){
                     return {
                     "UserName" :               r.get("UserObject").get("UserName"),
@@ -262,7 +267,8 @@ Ext.define('CustomApp', {
                     'EpicID' : r.get("EpicObject") ? r.get("EpicObject").get("FormattedID") : null,
                     'EpicName' : r.get("EpicObject") ? r.get("EpicObject").get("Name") : null,
                     'Hours' : r.get('Hours'),
-                    'ObjectID' : r.get("TimeEntryItemObject").get("ObjectID"),
+                    'ObjectID' : r.get("ObjectID"),
+//                    'ObjectID' : r.get("TimeEntryItemObject").get("ObjectID"),
                     'Date' : Ext.Date.format(r.get("DateVal"),"D d M Y"),
                     'c_KMDEmployeeID' : r.get("UserObject").get("c_KMDEmployeeID")
                     };
@@ -491,9 +497,8 @@ Ext.define('CustomApp', {
    
    
    _getDateFilter: function() {
-   var panel = _.first(Ext.ComponentQuery.query("#panel"));
-   var startDateCmp = panel.down('#startDate').getValue();
-   var endDateCmp = panel.down('#endDate').getValue();
+   var startDateCmp = Ext.getCmp('startDate').getValue();
+   var endDateCmp = Ext.getCmp('endDate').getValue();
    var start = Rally.util.DateTime.toIsoString(startDateCmp, false);
    var end   = Rally.util.DateTime.toIsoString(endDateCmp, false);
    

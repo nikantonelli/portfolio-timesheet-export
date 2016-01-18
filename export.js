@@ -2,6 +2,11 @@ Ext.define("GridExporter", {
     //dateFormat : 'Y-m-d g:i',
     dateFormat : 'Y-m-d',
 
+    inheritableStatics: {
+        XmlFileHeader: '<?xml version="1.0"?>',
+        XmlFileExtension: '.xml.txt'
+    },
+
     _downloadFiles: function( files ) {
         if ( files.length )
         {
@@ -13,7 +18,7 @@ Ext.define("GridExporter", {
 
             var ml = Ext.DomHelper.insertAfter(window.document.getElementById('tsGrid'), href);
             ml.click();
-            ml.remove();
+//            ml.remove();
             this._downloadFiles(files);
         }
     },
@@ -30,11 +35,74 @@ Ext.define("GridExporter", {
 
     },
 
+    _XMLIndent: function(index, tag, leaf, data) {
+        var text = '\n';
+        for (var i = 0; i < index; i++) text += '\t';
+        text += '<' + tag + '>';
+        text += data;
+        if (!leaf) { text += '\n'; for (i = 0; i < index; i++) text += '\t';}
+        text += '</' + tag + '>';
+        return text;
+
+    },
+
+    _addSAPTrailerFile: function(data) {
+
+        var file = 'E1BPCATS8';
+        var format = 'data:text/text;charset=utf8';
+        var text = this.self.XmlFileHeader;
+
+        text += "\n<" + file + ">";
+        _.each(data, function(record) {
+            text += this._XMLIndent(1, 'Datarow', false,
+                this._XMLIndent(2, 'GUID', true, record.get('ObjectID')) +
+                this._XMLIndent(2, 'ROW', true, '') +
+                this._XMLIndent(2, 'FORMAT_COL', true, '*') +
+                this._XMLIndent(2, 'TEXT_LINE', true, '')
+            );
+        }, this);
+
+        text += "</" + file + ">\n";
+        file += this.self.XmlFileExtension;
+        return [ file, format, text ];
+    },
+
+    _addSAPDataFile: function(data) {
+
+        var file = 'E1BPCATS1';
+        var format = 'data:text/text;charset=utf8';
+        var text = this.self.XmlFileHeader;
+
+        text += "\n<" + file + ">";
+        _.each(data, function(record) {
+            text += this._XMLIndent(1, 'Datarow', false,
+                this._XMLIndent(2, 'GUID', true, record.get('ObjectID') || '') +
+                this._XMLIndent(2, 'WORKDATE', true, Ext.Date.format(record.get('Date'), 'Ymd')) +
+                this._XMLIndent(2, 'EMPLOYEENUMBER', true, record.get('c_KMDEmployeeID') || '') +
+                this._XMLIndent(2, 'ACTTYPE', true, '') +
+                this._XMLIndent(2, 'NETWORK', true, record.get('c_SAPNetwork') || '') +
+                this._XMLIndent(2, 'ACTIVITY', true, record.get('c_SAPOperation') || '') +
+                this._XMLIndent(2, 'SUB_ACTIVITY', true, record.get('c_SAPSubOperation') || '') +
+                this._XMLIndent(2, 'CATSHOURS', true, record.get('Hours')) +
+                this._XMLIndent(2, 'UNIT', true, 'H') +
+                this._XMLIndent(2, 'SHORTTEXT', true, record.get('TaskDisplayString') || record.get('WorkProductDisplayString') || '') +
+                this._XMLIndent(2, 'LONGTEXT', true, '')
+            );
+        }, this);
+        text += "</" + file + ">\n";
+        file += this.self.XmlFileExtension;
+        return [ file, format, text ];
+
+    },
+
     exportSAPXML: function(grid) {
 
         var filesToSave = [];
 
-        this._downloadFiles( filesToSave.concat( this._addSAPHeaderFile(), this._addSAPDataFile(), this._addSAPTrailerFile() );
+        if ( grid && grid.store && grid.store.data ) {
+            var data = grid.store.data.items;
+            this._downloadFiles( filesToSave.concat( this._addSAPDataFile(data), this._addSAPTrailerFile(data) ));
+        }
 
     },
 
