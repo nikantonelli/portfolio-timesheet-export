@@ -252,7 +252,6 @@ Ext.define('CustomApp', {
                  ];
 
    // convert records into a json data structure
-   debugger;
    var data = _.map(records,function(r){
                     return {
                     "UserName" :               r.get("UserObject").get("UserName"),

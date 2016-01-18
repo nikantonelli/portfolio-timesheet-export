@@ -67,6 +67,26 @@ Ext.define("GridExporter", {
         return [ file, format, text ];
     },
 
+    _addSAPHeaderFile: function(data) {
+
+        var file = 'E1CATS_INSERT';
+        var format = 'data:text/text;charset=utf8';
+        var text = this.self.XmlFileHeader;
+
+        text += "\n<" + file + ">";
+        _.each(data, function(record) {
+            text += this._XMLIndent(1, 'Datarow', false,
+                this._XMLIndent(2, 'GUID', true, record.get('ObjectID')) +
+                this._XMLIndent(2, 'PROFILE', true, '') +
+                this._XMLIndent(2, 'TEXT_FORMAT_IMP', true, 'ITF')
+            );
+        }, this);
+
+        text += "</" + file + ">\n";
+        file += this.self.XmlFileExtension;
+        return [ file, format, text ];
+    },
+
     _addSAPDataFile: function(data) {
 
         var file = 'E1BPCATS1';
@@ -101,7 +121,7 @@ Ext.define("GridExporter", {
 
         if ( grid && grid.store && grid.store.data ) {
             var data = grid.store.data.items;
-            this._downloadFiles( filesToSave.concat( this._addSAPDataFile(data), this._addSAPTrailerFile(data) ));
+            this._downloadFiles( filesToSave.concat( this._addSAPHeaderFile(data), this._addSAPDataFile(data), this._addSAPTrailerFile(data) ));
         }
 
     },

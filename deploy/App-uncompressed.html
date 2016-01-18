@@ -180,48 +180,48 @@ Ext.define('CustomApp', {
          });
    },
 
-   createTimeValueStore : function() {
+    createTimeValueStore : function() {
 
-   app.showMask("Loading Time Sheet Values");
+        app.showMask("Loading Time Sheet Values");
 
-   // clear the grid
-    if (!_.isNull(app.grid)) {
-        app.remove(app.grid);
-    }
+       // clear the grid
+        if (!_.isNull(app.grid)) {
+            app.remove(app.grid);
+        }
 
-    var nr = null;
-    if ((nr = Ext.getCmp('noRecords'))){
-        nr.destroy();
-    }
+        var nr = null;
+        if ((nr = Ext.getCmp('noRecords'))){
+            nr.destroy();
+        }
 
-   var filter = app._getDateFilter();
-   console.log(filter);
+        var filter = app._getDateFilter();
+        console.log(filter);
 
-   Ext.create('Rally.data.wsapi.Store', {
-              model : "TimeEntryValue",
-              fetch : true,
-              filters : filter,
-              limit : 'Infinity'
-              } ).load({
-                       callback : function(records, operation, successful) {
-                       if (records.length===0) {
-                       app.hideMask();
-                       app.add({html:"No records for this date range",itemId:"norecords", id: "noRecords"});
-                       }
-                       app.readRelatedValues(records,function(){
-                                             app.hideMask();
-                                             var message = app.down("#norecords");
-                                             if(!_.isUndefined(message)){
-                                             app.remove(message);
-                                             }
-                                             console.log("records",records);
-                                             app.createArrayStoreFromRecords(records) ;
-                                             });
-
-                       }
-                       });
-
-   },
+        Ext.create('Rally.data.wsapi.Store', {
+            model : "TimeEntryValue",
+            fetch : true,
+            filters : filter,
+            limit : 'Infinity'
+        }).load({
+            callback : function(records, operation, successful) {
+                if (records.length===0) {
+                    app.hideMask();
+                    app.add({html:"No records for this date range",itemId:"norecords", id: "noRecords"});
+                }
+                app.readRelatedValues(records,
+                    function(){
+                        app.hideMask();
+                        var message = app.down("#norecords");
+                        if(!_.isUndefined(message)){
+                            app.remove(message);
+                        }
+                        console.log("records",records);
+                        app.createArrayStoreFromRecords(records) ;
+                    }
+                );
+            }
+        });
+    },
 
    getFieldValue : function(record, field) {
    // returns the most specific value for a field
@@ -275,7 +275,8 @@ Ext.define('CustomApp', {
                     'EpicID' : r.get("EpicObject") ? r.get("EpicObject").get("FormattedID") : null,
                     'EpicName' : r.get("EpicObject") ? r.get("EpicObject").get("Name") : null,
                     'Hours' : r.get('Hours'),
-                    'ObjectID' : r.get("TimeEntryItemObject").get("ObjectID"),
+                    'ObjectID' : r.get("ObjectID"),
+//                    'ObjectID' : r.get("TimeEntryItemObject").get("ObjectID"),
                     'Date' : Ext.Date.format(r.get("DateVal"),"D d M Y"),
                     'c_KMDEmployeeID' : r.get("UserObject").get("c_KMDEmployeeID")
                     };
@@ -641,6 +642,26 @@ Ext.define('CustomApp', {
         return [ file, format, text ];
     },
 
+    _addSAPHeaderFile: function(data) {
+
+        var file = 'E1CATS_INSERT';
+        var format = 'data:text/text;charset=utf8';
+        var text = this.self.XmlFileHeader;
+
+        text += "\n<" + file + ">";
+        _.each(data, function(record) {
+            text += this._XMLIndent(1, 'Datarow', false,
+                this._XMLIndent(2, 'GUID', true, record.get('ObjectID')) +
+                this._XMLIndent(2, 'PROFILE', true, '') +
+                this._XMLIndent(2, 'TEXT_FORMAT_IMP', true, 'ITF')
+            );
+        }, this);
+
+        text += "</" + file + ">\n";
+        file += this.self.XmlFileExtension;
+        return [ file, format, text ];
+    },
+
     _addSAPDataFile: function(data) {
 
         var file = 'E1BPCATS1';
@@ -675,7 +696,7 @@ Ext.define('CustomApp', {
 
         if ( grid && grid.store && grid.store.data ) {
             var data = grid.store.data.items;
-            this._downloadFiles( filesToSave.concat( this._addSAPDataFile(data), this._addSAPTrailerFile(data) ));
+            this._downloadFiles( filesToSave.concat( this._addSAPHeaderFile(data), this._addSAPDataFile(data), this._addSAPTrailerFile(data) ));
         }
 
     },
