@@ -2,11 +2,17 @@ Ext.define("GridExporter", {
     //dateFormat : 'Y-m-d g:i',
     dateFormat : 'Y-m-d',
 
-    exportGrid: function(grid) {
+    exportCSV: function(grid) {
         var data = this._getCSV(grid);
         // fix: ' character was causing termination of csv file
-        data = data.replace(/\'/g, "")
-        return "<a href='data:text/csv;charset=utf8," + encodeURIComponent(data) + "' download='export.csv'>Click to download file</a>";
+        data = data.replace(/\'/g, "");
+        this.downloadFiles(
+            [
+                'export.csv', 'data:text/csv;charset=utf8', data,
+                'export.csv', 'data:text/csv;charset=utf8', data
+            ]
+        );
+
     },
 
     _escapeForCSV: function(string) {
@@ -24,7 +30,7 @@ Ext.define("GridExporter", {
     _getFieldText: function(fieldData,record,col,index) {
         var text;
 
-        if (fieldData == null || fieldData == undefined) {
+        if (fieldData === null || fieldData === undefined) {
             text = '';
 
         } else if (fieldData._refObjectName && !fieldData.getMonth) {
@@ -51,7 +57,7 @@ Ext.define("GridExporter", {
     // have to add the colIdx to the count of locked columns
     fixedColumnCount : function(columns) {
         var cols = _.filter(columns,function(c) { 
-            return c!==undefined && c!==null && c.locked == true;
+            return c!==undefined && c!==null && c.locked === true;
         });
         return cols.length;
     },
@@ -64,9 +70,9 @@ Ext.define("GridExporter", {
         var that = this;
         Ext.Array.each(cols, function(col, index) {
         // Ext.Array.each(sortedCols, function(col, index) { 
-            if (col.hidden != true) {
+            if (col.hidden !== true) {
                 // fix the issue with the "SYLK" warning in excel by prepending "Item" to the ID column
-                var colLabel = (index === 0 ? "Item " : "") + col.text;
+                var colLabel = (index === 0 ? "Item " : "") + col.dataIndex;
                 colLabel = colLabel.replace(/<br\/?>/,'');
                 data += that._getFieldTextAndEscape(colLabel) + ',';
             }
@@ -77,7 +83,7 @@ Ext.define("GridExporter", {
 
             Ext.Array.each(cols, function(col, index) {
             
-                if (col.hidden != true) {
+                if (col.hidden !== true) {
                     var fieldName   = col.dataIndex;
                     var text        = record.get(fieldName);
                     data += that._getFieldTextAndEscape(text,record,col,index) + ',';
@@ -87,6 +93,22 @@ Ext.define("GridExporter", {
         });
 
         return data;
+    },
+
+    downloadFiles: function( files ) {
+        if ( files.length )
+        {
+            var data = files.pop();
+            var format = files.pop();
+            var file = files.pop();
+
+            var href = "<a href='" + format + "," + encodeURIComponent(data) + "' download='" + file + "'></a>";
+
+            var ml = Ext.DomHelper.insertAfter(window.document.getElementById('tsGrid'), href);
+            ml.click();
+            ml.remove();
+            this.downloadFiles(files);
+        }
     }
 
 });
