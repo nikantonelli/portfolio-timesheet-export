@@ -1,93 +1,104 @@
 var app = null;
 
 Ext.define('CustomApp', {
-   extend: 'Rally.app.App',
-   componentCls: 'app',
-   itemId : 'app',
-   cache : [],
-   items : [
-    {
+    extend: 'Rally.app.App',
+    componentCls: 'app',
+    stateful: true,
+    itemId : 'app',
+    cache : [],
+    items : [
+        {
             itemId : 'panel',
             xtype : 'panel',
             layout : 'column',
             items : [
-                     {
-                     name: 'intervalType',
-                     xtype: 'combo',
-                     store : Ext.create("Ext.data.ArrayStore",{
+                {
+                    name: 'intervalType',
+                    xtype: 'combo',
+                    store : Ext.create("Ext.data.ArrayStore",
+                                    {
                                         fields: ['interval'],
                                         data : [['Today'],['This Week'],['Last Week'],['This Month'],['Last Month']]
-                                        }),
-                     valueField : 'interval',
-                     displayField : 'interval',
-                     queryMode : 'local',
-                     forceSelection : true,
-                     boxLabelAlign: 'after',
-                     fieldLabel: 'Interval',
-                     margin: '5 5 5 5',
-                     listeners : {
-                     scope : this,
-                     select : function(list,item) {
-                     var panel = _.first(Ext.ComponentQuery.query("#panel"));
-                     var startDateCmp = panel.down('#startDate');
-                     var endDateCmp = panel.down('#endDate');
-                     var start,end;
+                                    }
+                    ),
+                    valueField : 'interval',
+                    displayField : 'interval',
+                    queryMode : 'local',
+                    forceSelection : true,
+                    boxLabelAlign: 'after',
+                    fieldLabel: 'Interval',
+                    margin: '5 5 5 5',
+                    listeners : {
+                        scope : this,
+                        select : function(list,item) {
+                            var panel = _.first(Ext.ComponentQuery.query("#panel"));
+                            var startDateCmp = panel.down('#startDate');
+                            var endDateCmp = panel.down('#endDate');
+                            var start,end;
 
-                     switch(_.first(item).get('interval')){
-                     case 'Today' :
-                     start = moment().startOf('day').toDate();
-                     end = moment().endOf('day').toDate();
-                     break;
-                     case 'This Week':
-                     start = moment().startOf('week').toDate();
-                     end = moment().endOf('week').toDate();
-                     break;
-                     case 'Last Week':
-                     start = moment().subtract(1,'week').startOf('week').toDate();
-                     end = moment().subtract(1,'week').endOf('week').toDate();
-                     break;
-                     case 'This Month':
-                     start = moment().startOf('month').toDate();
-                     end = moment().endOf('month').toDate();
-                     break;
-                     case 'Last Month':
-                     start = moment().subtract(1,'month').startOf('month').toDate();
-                     end = moment().subtract(1,'month').endOf('month').toDate();
-                     break;
+                            var dt = new Date();
+
+                            switch(_.first(item).get('interval')){
+                                case 'Today' :
+                                    start = Ext.Date.clearTime(dt);
+                                    end   = Ext.Date.clearTime(Ext.Date.add(start, Ext.Date.MILLI,((24 * 60 * 60 * 1000) - 1)));
+                                    break;
+                                case 'This Week':
+                                    start = Ext.Date.clearTime(Ext.Date.subtract(dt, Ext.Date.DAY, dt.getDay()));   //Sunday AM
+                                    end   = Ext.Date.clearTime(Ext.Date.add(start, Ext.Date.DAY, ((7 * 24 * 60 * 60 * 1000) - 1)));   //Saturday PM
+                                    break;
+                                case 'Last Week':
+                                    start = Ext.Date.clearTime(Ext.Date.subtract(dt, Ext.Date.DAY, 7 + dt.getDay()));   //Sunday AM
+                                    end   = Ext.Date.clearTime(Ext.Date.add(start, Ext.Date.DAY, ((7 * 24 * 60 * 60 * 1000) - 1)));   //Saturday PM
+                                    break;
+                                case 'This Month':
+                                    start = new Date("1/" + dt.getMonth() + 1 + "/" + dt.getFullYear());
+                                    end   = Ext.Date.subtract(Ext.Date.add(start, Ext.Date.MONTH,1), Ext.Date.MILLI, 1);
+                                    break;
+                                case 'Last Month':
+                                    start = new Date("1/" + dt.getMonth() + 1 + "/" + dt.getFullYear());
+                                    start = Ext.Date.subtract(start, Ext.Date.MONTH, 1);
+                                    end   = Ext.Date.subtract(Ext.Date.add(start, Ext.Date.MONTH,1), Ext.Date.MILLI, 1);
+                                    break;
+                            }
+                            startDateCmp.setValue( start );startDateCmp.getValue();
+                            endDateCmp.setValue( end ); endDateCmp.getValue();
+                            app.createTimeValueStore();
+                        }
                      }
-                     startDateCmp.setValue( start );startDateCmp.getValue();
-                     endDateCmp.setValue( end ); endDateCmp.getValue();
-                     app.createTimeValueStore();
+                },
+                {
+                    itemId : 'startDate',
+                    margin: '5 5 5 5',
+                    xtype: 'datefield',
+                    format: 'd M Y',
+                    stateful: true,
+                    stateId: 'tsDate1',
+                    fieldLabel: 'Start Date',
+                    value: new Date()
+                },
+                {
+                    itemId : 'endDate',
+                    margin: '5 5 5 5',
+                    xtype: 'datefield',
+                    stateful: true,
+                    stateId: 'tsDate2',
+                    format: 'd M Y',
+                    fieldLabel: 'End Date',
+                    value: new Date(),
+                    listeners : {
+                        select : function(field,value) {
+                            console.log("value:",value);
+                            app.createTimeValueStore();
+                        }
                      }
-                     }
-                     },
-                     {
-                     itemId : 'startDate',
-                     margin: '5 5 5 5',
-                     xtype: 'datefield',
-                     fieldLabel: 'Start Date',
-                     value: new Date()
-                     },
-                     {
-                     itemId : 'endDate',
-                     margin: '5 5 5 5',
-                     xtype: 'datefield',
-                     fieldLabel: 'End Date',
-                     value: new Date(),
-                     listeners : {
-                     select : function(field,value) {
-                     console.log("value:",value);
-                     app.createTimeValueStore();
-                     }
-                     }
-                     },
-                     {
+                },
+                {
                     id : 'exportButton',
                     margin: '5 5 5 5',
                     xtype: 'rallybutton',
                     text : 'Export',
                     handler : function() {
-
                         var saveDialog = Ext.create('Rally.ui.dialog.Dialog', {
                             autoShow: true,
                             draggable: true,
@@ -98,7 +109,7 @@ Ext.define('CustomApp', {
                                     xtype: 'rallybutton',
                                     text: 'CSV',
                                     handler: function () {
-                                        app.exporter.exportCSV(app.grid)
+                                        app.exporter.exportCSV(app.grid);
                                         saveDialog.destroy();
                                     }
                                 },
@@ -106,7 +117,7 @@ Ext.define('CustomApp', {
                                     xtype: 'rallybutton',
                                     text: 'SAP XML',
                                     handler: function () {
-                                        Ext.Msg.alert('Not implemented yet');
+                                        app.exporter.exportSAPXML(app.grid);
                                         saveDialog.destroy();
                                     }
                                 },
@@ -262,17 +273,20 @@ Ext.define('CustomApp', {
                           data : data
                           });
 
-   app.grid = new Ext.grid.GridPanel({
-                                     frame: true,
-                                     id : 'tsGrid',
-                                     title: 'TimeSheetData',
-                                     store: store,
-                                     columns: _.map(fields,function(f){return {text:f.displayName,dataIndex:f.name}; })
-                                     });
+    app.grid = new Ext.grid.GridPanel(
+        {
+//            frame: true,
+            header: false,
+            id : 'tsGrid',
+            title: 'TimeSheetData',
+            store: store,
+            columns: _.map(fields,function(f){return {text:f.displayName,dataIndex:f.name}; })
+        }
+    );
 
-   this.add(app.grid);
+    this.add(app.grid);
 
-   },
+    },
 
    readRelatedValues : function(values,callback) {
 

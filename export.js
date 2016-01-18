@@ -2,16 +2,39 @@ Ext.define("GridExporter", {
     //dateFormat : 'Y-m-d g:i',
     dateFormat : 'Y-m-d',
 
+    _downloadFiles: function( files ) {
+        if ( files.length )
+        {
+            var data = files.pop();
+            var format = files.pop();
+            var file = files.pop();
+
+            var href = "<a href='" + format + "," + encodeURIComponent(data) + "' download='" + file + "'></a>";
+
+            var ml = Ext.DomHelper.insertAfter(window.document.getElementById('tsGrid'), href);
+            ml.click();
+            ml.remove();
+            this._downloadFiles(files);
+        }
+    },
+
     exportCSV: function(grid) {
         var data = this._getCSV(grid);
         // fix: ' character was causing termination of csv file
         data = data.replace(/\'/g, "");
-        this.downloadFiles(
+        this._downloadFiles(
             [
-                'export.csv', 'data:text/csv;charset=utf8', data,
                 'export.csv', 'data:text/csv;charset=utf8', data
             ]
         );
+
+    },
+
+    exportSAPXML: function(grid) {
+
+        var filesToSave = [];
+
+        this._downloadFiles( filesToSave.concat( this._addSAPHeaderFile(), this._addSAPDataFile(), this._addSAPTrailerFile() );
 
     },
 
@@ -72,7 +95,8 @@ Ext.define("GridExporter", {
         // Ext.Array.each(sortedCols, function(col, index) { 
             if (col.hidden !== true) {
                 // fix the issue with the "SYLK" warning in excel by prepending "Item" to the ID column
-                var colLabel = (index === 0 ? "Item " : "") + col.dataIndex;
+                var colLabel = col.dataIndex;
+//                var colLabel = (index === 0 ? "Item " : "") + col.dataIndex;
                 colLabel = colLabel.replace(/<br\/?>/,'');
                 data += that._getFieldTextAndEscape(colLabel) + ',';
             }
@@ -93,22 +117,5 @@ Ext.define("GridExporter", {
         });
 
         return data;
-    },
-
-    downloadFiles: function( files ) {
-        if ( files.length )
-        {
-            var data = files.pop();
-            var format = files.pop();
-            var file = files.pop();
-
-            var href = "<a href='" + format + "," + encodeURIComponent(data) + "' download='" + file + "'></a>";
-
-            var ml = Ext.DomHelper.insertAfter(window.document.getElementById('tsGrid'), href);
-            ml.click();
-            ml.remove();
-            this.downloadFiles(files);
-        }
     }
-
 });
