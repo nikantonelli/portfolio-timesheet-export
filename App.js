@@ -75,7 +75,16 @@ Ext.define('CustomApp', {
                     stateful: true,
                     stateId: 'tsDate1',
                     fieldLabel: 'Start Date',
-                    value: new Date()
+                    value: new Date(),
+                    listeners: {
+                        select: function (field,value) {
+                            var endDateCmp = Ext.getCmp('endDate');
+                            if ( endDateCmp.getValue() < value) {
+                                endDateCmp.setValue(value);
+                            }
+                            app.createTimeValueStore();
+                        }
+                    }
                 },
                 {
                     id : 'endDate',
@@ -88,7 +97,10 @@ Ext.define('CustomApp', {
                     value: new Date(),
                     listeners : {
                         select : function(field,value) {
-                            console.log("value:",value);
+                            var startDateCmp = Ext.getCmp('startDate');
+                            if ( startDateCmp.getValue() > value) {
+                                startDateCmp.setValue(value);
+                            }
                             app.createTimeValueStore();
                         }
                      }

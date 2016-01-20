@@ -84,7 +84,16 @@ Ext.define('CustomApp', {
                     stateful: true,
                     stateId: 'tsDate1',
                     fieldLabel: 'Start Date',
-                    value: new Date()
+                    value: new Date(),
+                    listeners: {
+                        select: function (field,value) {
+                            var endDateCmp = Ext.getCmp('endDate');
+                            if ( endDateCmp.getValue() < value) {
+                                endDateCmp.setValue(value);
+                            }
+                            app.createTimeValueStore();
+                        }
+                    }
                 },
                 {
                     id : 'endDate',
@@ -97,7 +106,10 @@ Ext.define('CustomApp', {
                     value: new Date(),
                     listeners : {
                         select : function(field,value) {
-                            console.log("value:",value);
+                            var startDateCmp = Ext.getCmp('startDate');
+                            if ( startDateCmp.getValue() > value) {
+                                startDateCmp.setValue(value);
+                            }
                             app.createTimeValueStore();
                         }
                      }
@@ -293,7 +305,7 @@ Ext.define('CustomApp', {
             header: false,
             id : 'tsGrid',
             title: 'TimeSheetData',
-            features: [{ftype: 'grouping',  showSummaryRow: true, groupHeaderTpl: '{columnName}: {name} ({children.length} items)'}],
+            features: [{ftype: 'grouping',  showSummaryRow: true, groupHeaderTpl: ' {name} ({children.length} items)'}],
             store: store,
             columns: _.map(fields,function(f){
                 if (f.name !== 'Hours') {
