@@ -285,39 +285,70 @@ Ext.define('CustomApp', {
                     };
                     });
 
-   var store = Ext.create('Ext.data.JsonStore', {
-                          fields: fields,
-                          data : data
-                          });
+        var store = Ext.create('Ext.data.JsonStore', {
+            fields: fields,
+            data : data
+        });
 
-    app.grid = new Ext.grid.GridPanel(
-        {
-//            frame: true,
-            header: false,
-            id : 'tsGrid',
-            title: 'TimeSheetData',
-            features: [{ftype: 'grouping',  showSummaryRow: true, groupHeaderTpl: ' {name} ({children.length} items)'}],
-            store: store,
-            columns: _.map(fields,function(f){
-                if (f.name !== 'Hours') {
-                    return {
-                        text:f.displayName,
-                        dataIndex:f.name
-                    };
-                }
-                else return {
-                    text:f.displayName,
-                    dataIndex:f.name,
-                    summaryType: 'sum',
-                    summaryRenderer: function(value, summaryData, dataIndex) {
-                        return Ext.String.format('<div style="background-color:#E4EECF">Total: {0}</div>', value);
-                    }
-                };
-            })
-        }
-    );
+        app.grid = new Ext.grid.GridPanel(
+            {
+    //            frame: true,
+                header: false,
+                id : 'tsGrid',
+                title: 'TimeSheetData',
+                features: [
+                    {ftype: 'grouping',  showSummaryRow: true, groupHeaderTpl: ' {name}'},
+                    {ftype: 'summary'}
+                ],
+                store: store,
+                columns: _.map(fields,function(f){
+                    if (f.name === 'Hours') {
+                        return {
+                            text:f.displayName,
+                            dataIndex:f.name,
+                            summaryType: 'sum',
+                            summaryRenderer: function(value, summaryData, dataIndex) {
+                                return Ext.String.format('<div style="background-color:#E4EECF">Total: {0}</div>', value);
+                            }
+                        };
+                    } else if (f.name === 'UserName'){
+                        return {
+                            text:f.displayName,
+                            dataIndex:f.name,
+                            flex: 1,
+                            summaryType: 'count',
+                            summaryRenderer: function(value, summaryData, dataIndex) {
+                                return Ext.String.format('<div style="background-color:#E4EECF"> {0} item{1}</div>', value, value > 1?'s':'');
+                            }
+                        };
+                    } else
+                        return {
+                            text:f.displayName,
+                            dataIndex:f.name
+                        };
+                })
+            }
+        );
 
-    this.add(app.grid);
+        this.add(app.grid);
+
+          //Add a tip to show some user details, e.g. phone number, dept, etc.
+//        var gView = app.grid.getView();
+//        var tip = Ext.create('Ext.tip.ToolTip', {
+//            target: gView.el,
+//            autoHide: true,
+//            delegate: gView.itemSelector,
+//            trackMouse: true,
+//            listeners: {
+//                beforeshow: function updateTipBody(tip) {
+//
+//                    var lr = _.find(records, function(r) { return (r.get('ObjectID') === gView.getRecord(tip.triggerElement).get('ObjectID'))});
+//                    tip.update(lr.get('UserObject').get('UserName'));
+//                }
+//            }
+//        });
+//
+//        app.grid.add(tip);
 
     },
 
