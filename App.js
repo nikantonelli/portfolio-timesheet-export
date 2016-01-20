@@ -261,7 +261,7 @@ Ext.define('CustomApp', {
             'Hours' : r.get('Hours'),
             'ObjectID' : r.get("ObjectID"),
 //            'ObjectID' : r.get("TimeEntryItemObject").get("ObjectID"),
-            'Date' : Ext.Date.format(r.get("DateVal"),"D d M Y"),
+            'Date' : Ext.Date.format(r.get("DateVal"),"D d M Y")
         };
     });
 
@@ -276,7 +276,7 @@ Ext.define('CustomApp', {
             header: false,
             id : 'tsGrid',
             title: 'TimeSheetData',
-            features: [{ftype: 'grouping',  showSummaryRow: true, groupHeaderTpl: '{columnName}: {name} ({children.length} items)'}],
+            features: [{ftype: 'grouping',  showSummaryRow: true, groupHeaderTpl: ' {name} ({children.length} items)'}],
             store: store,
             columns: _.map(fields,function(f){
                 if (f.name !== 'Hours') {

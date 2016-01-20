@@ -270,7 +270,7 @@ Ext.define('CustomApp', {
             'Hours' : r.get('Hours'),
             'ObjectID' : r.get("ObjectID"),
 //            'ObjectID' : r.get("TimeEntryItemObject").get("ObjectID"),
-            'Date' : Ext.Date.format(r.get("DateVal"),"D d M Y"),
+            'Date' : Ext.Date.format(r.get("DateVal"),"D d M Y")
         };
     });
 
@@ -285,7 +285,7 @@ Ext.define('CustomApp', {
             header: false,
             id : 'tsGrid',
             title: 'TimeSheetData',
-            features: [{ftype: 'grouping',  showSummaryRow: true, groupHeaderTpl: '{columnName}: {name} ({children.length} items)'}],
+            features: [{ftype: 'grouping',  showSummaryRow: true, groupHeaderTpl: ' {name} ({children.length} items)'}],
             store: store,
             columns: _.map(fields,function(f){
                 if (f.name !== 'Hours') {
@@ -660,7 +660,7 @@ Ext.define('CustomApp', {
         _.each(data, function(record) {
             text += this._XMLIndent(1, 'Datarow', false,
                 this._XMLIndent(2, 'GUID', true, record.get('ObjectID')) +
-                this._XMLIndent(2, 'PROFILE', true, '') +
+                this._XMLIndent(2, 'PROFILE', true, record.get('c_KMDEmployeeID') || '') +
                 this._XMLIndent(2, 'TEXT_FORMAT_IMP', true, 'ITF')
             );
         }, this);
@@ -680,7 +680,7 @@ Ext.define('CustomApp', {
         _.each(data, function(record) {
             text += this._XMLIndent(1, 'Datarow', false,
                 this._XMLIndent(2, 'GUID', true, record.get('ObjectID') || '') +
-                this._XMLIndent(2, 'WORKDATE', true, Ext.Date.format(record.get('Date'), 'Ymd')) +
+                this._XMLIndent(2, 'WORKDATE', true, Ext.Date.format(new Date(record.get('Date')), 'Ymd')) +
                 this._XMLIndent(2, 'EMPLOYEENUMBER', true, record.get('c_KMDEmployeeID') || '') +
                 this._XMLIndent(2, 'ACTTYPE', true, '') +
                 this._XMLIndent(2, 'NETWORK', true, record.get('c_SAPNetwork') || '') +
