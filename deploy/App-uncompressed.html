@@ -297,12 +297,18 @@ Ext.define('CustomApp', {
             store: store,
             columns: _.map(fields,function(f){
                 if (f.name !== 'Hours') {
-                    return {text:f.displayName,dataIndex:f.name};
+                    return {
+                        text:f.displayName,
+                        dataIndex:f.name
+                    };
                 }
                 else return {
                     text:f.displayName,
                     dataIndex:f.name,
-                    summaryType: 'sum'
+                    summaryType: 'sum',
+                    summaryRenderer: function(value, summaryData, dataIndex) {
+                        return Ext.String.format('<div style="background-color:#E4EECF">Total: {0}</div>', value);
+                    }
                 };
             })
         }
