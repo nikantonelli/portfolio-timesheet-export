@@ -240,43 +240,35 @@ Ext.define('CustomApp', {
                  {displayName: 'Work Product', name: 'WorkProductDisplayString'},
                  {displayName: 'Feature ID', name: 'FeatureID'},
                  {displayName: 'Feature Title', name: 'FeatureName'},
-                 {displayName: 'SAP Network', name: 'c_SAPNetwork'},
-                 {displayName: 'SAP Operation', name: 'c_SAPOperation'},
-                 {displayName: 'SAP Sub Operation', name: 'c_SAPSubOperation'},
                  {displayName: 'Epic ID', name: 'EpicID'},
                  {displayName: 'Epic Title', name: 'EpicName'},
                  {displayName: 'Hours Entered', name: 'Hours'},
                  {displayName: 'Unique ID', name: 'ObjectID'},
-                 {displayName: 'Date', name: 'Date'},
-                 {displayName: 'Employee ID', name: 'c_KMDEmployeeID'}
+                 {displayName: 'Date', name: 'Date'}
                  ];
 
    // convert records into a json data structure
-   var data = _.map(records,function(r){
-                    return {
-                    "UserName" :               r.get("UserObject").get("UserName"),
-                    "TaskDisplayString" :      r.get("TimeEntryItemObject").get("TaskDisplayString"),
-                    "ProjectDisplayString" :   r.get("TimeEntryItemObject").get("ProjectDisplayString"),
-                    "WorkProductDisplayString":r.get("TimeEntryItemObject").get("WorkProductDisplayString"),
-                    "FeatureID" :   r.get("FeatureObject") ? r.get("FeatureObject").get("FormattedID") : null,
-                    "FeatureName" : r.get("FeatureObject") ? r.get("FeatureObject").get("Name") : null,
-                    'c_SAPNetwork' : app.getFieldValue(r,'c_SAPNetwork'),
-                    'c_SAPOperation' : app.getFieldValue(r,'c_SAPOperation'),
-                    'c_SAPSubOperation' : app.getFieldValue(r,'c_SAPSubOperation'),
-                    'EpicID' : r.get("EpicObject") ? r.get("EpicObject").get("FormattedID") : null,
-                    'EpicName' : r.get("EpicObject") ? r.get("EpicObject").get("Name") : null,
-                    'Hours' : r.get('Hours'),
-                    'ObjectID' : r.get("ObjectID"),
-//                    'ObjectID' : r.get("TimeEntryItemObject").get("ObjectID"),
-                    'Date' : Ext.Date.format(r.get("DateVal"),"D d M Y"),
-                    'c_KMDEmployeeID' : r.get("UserObject").get("c_KMDEmployeeID")
-                    };
-                    });
+    var data = _.map(records,function(r){
+        return {
+            "UserName" :               r.get("UserObject").get("UserName"),
+            "TaskDisplayString" :      r.get("TimeEntryItemObject").get("TaskDisplayString"),
+            "ProjectDisplayString" :   r.get("TimeEntryItemObject").get("ProjectDisplayString"),
+            "WorkProductDisplayString":r.get("TimeEntryItemObject").get("WorkProductDisplayString"),
+            "FeatureID" :   r.get("FeatureObject") ? r.get("FeatureObject").get("FormattedID") : null,
+            "FeatureName" : r.get("FeatureObject") ? r.get("FeatureObject").get("Name") : null,
+            'EpicID' : r.get("EpicObject") ? r.get("EpicObject").get("FormattedID") : null,
+            'EpicName' : r.get("EpicObject") ? r.get("EpicObject").get("Name") : null,
+            'Hours' : r.get('Hours'),
+            'ObjectID' : r.get("ObjectID"),
+//            'ObjectID' : r.get("TimeEntryItemObject").get("ObjectID"),
+            'Date' : Ext.Date.format(r.get("DateVal"),"D d M Y"),
+        };
+    });
 
-   var store = Ext.create('Ext.data.JsonStore', {
-                          fields: fields,
-                          data : data
-                          });
+    var store = Ext.create('Ext.data.JsonStore', {
+        fields: fields,
+        data : data
+    });
 
     app.grid = new Ext.grid.GridPanel(
         {
