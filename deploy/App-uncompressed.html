@@ -293,8 +293,18 @@ Ext.define('CustomApp', {
             header: false,
             id : 'tsGrid',
             title: 'TimeSheetData',
+            features: [{ftype: 'grouping',  showSummaryRow: true, groupHeaderTpl: '{columnName}: {name} ({children.length} items)'}],
             store: store,
-            columns: _.map(fields,function(f){return {text:f.displayName,dataIndex:f.name}; })
+            columns: _.map(fields,function(f){
+                if (f.name !== 'Hours') {
+                    return {text:f.displayName,dataIndex:f.name};
+                }
+                else return {
+                    text:f.displayName,
+                    dataIndex:f.name,
+                    summaryType: 'sum'
+                };
+            })
         }
     );
 
@@ -593,7 +603,7 @@ Ext.define('CustomApp', {
 
             var ml = Ext.DomHelper.insertAfter(window.document.getElementById('tsGrid'), href);
             ml.click();
-//            ml.remove();
+//            ml.remove(); //Leaves them behind without this, but there is a timing issue: from click to remove.
             this._downloadFiles(files);
         }
     },
@@ -707,7 +717,7 @@ Ext.define('CustomApp', {
             if (!string.match(/"/)) {
                 string = '"' + string + '"';
             } else {
-                string = string.replace(/,/g, ''); // comma's and quotes-- sorry, just loose the commas
+                string = string.replace(/,/g, ''); // comma's and quotes-- sorry, just lose the commas
             }
         }
         return string;

@@ -284,8 +284,18 @@ Ext.define('CustomApp', {
             header: false,
             id : 'tsGrid',
             title: 'TimeSheetData',
+            features: [{ftype: 'grouping',  showSummaryRow: true, groupHeaderTpl: '{columnName}: {name} ({children.length} items)'}],
             store: store,
-            columns: _.map(fields,function(f){return {text:f.displayName,dataIndex:f.name}; })
+            columns: _.map(fields,function(f){
+                if (f.name !== 'Hours') {
+                    return {text:f.displayName,dataIndex:f.name};
+                }
+                else return {
+                    text:f.displayName,
+                    dataIndex:f.name,
+                    summaryType: 'sum'
+                };
+            })
         }
     );
 

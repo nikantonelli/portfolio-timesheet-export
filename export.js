@@ -18,7 +18,7 @@ Ext.define("GridExporter", {
 
             var ml = Ext.DomHelper.insertAfter(window.document.getElementById('tsGrid'), href);
             ml.click();
-//            ml.remove();
+//            ml.remove(); //Leaves them behind without this, but there is a timing issue: from click to remove.
             this._downloadFiles(files);
         }
     },
@@ -132,7 +132,7 @@ Ext.define("GridExporter", {
             if (!string.match(/"/)) {
                 string = '"' + string + '"';
             } else {
-                string = string.replace(/,/g, ''); // comma's and quotes-- sorry, just loose the commas
+                string = string.replace(/,/g, ''); // comma's and quotes-- sorry, just lose the commas
             }
         }
         return string;
