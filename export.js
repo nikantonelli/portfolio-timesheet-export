@@ -77,7 +77,7 @@ Ext.define("GridExporter", {
         _.each(data, function(record) {
             text += this._XMLIndent(1, 'Datarow', false,
                 this._XMLIndent(2, 'GUID', true, record.get('ObjectID')) +
-                this._XMLIndent(2, 'PROFILE', true, '') +
+                this._XMLIndent(2, 'PROFILE', true, record.get('c_KMDEmployeeID') || '') +
                 this._XMLIndent(2, 'TEXT_FORMAT_IMP', true, 'ITF')
             );
         }, this);
@@ -97,7 +97,7 @@ Ext.define("GridExporter", {
         _.each(data, function(record) {
             text += this._XMLIndent(1, 'Datarow', false,
                 this._XMLIndent(2, 'GUID', true, record.get('ObjectID') || '') +
-                this._XMLIndent(2, 'WORKDATE', true, Ext.Date.format(record.get('Date'), 'Ymd')) +
+                this._XMLIndent(2, 'WORKDATE', true, Ext.Date.format(new Date(record.get('Date')), 'Ymd')) +
                 this._XMLIndent(2, 'EMPLOYEENUMBER', true, record.get('c_KMDEmployeeID') || '') +
                 this._XMLIndent(2, 'ACTTYPE', true, '') +
                 this._XMLIndent(2, 'NETWORK', true, record.get('c_SAPNetwork') || '') +
