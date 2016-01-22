@@ -292,7 +292,6 @@ Ext.define('CustomApp', {
 
         app.grid = new Ext.grid.GridPanel(
             {
-    //            frame: true,
                 header: false,
                 id : 'tsGrid',
                 title: 'TimeSheetData',

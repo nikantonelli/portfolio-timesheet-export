@@ -24,7 +24,7 @@ Ext.define("GridExporter", {
     },
 
     exportCSV: function(grid) {
-        var data = this._getCSV(grid);
+        var data = this._getCSV(grid, false);
         // fix: ' character was causing termination of csv file
         data = data.replace(/\'/g, "");
         this._downloadFiles(
@@ -54,12 +54,14 @@ Ext.define("GridExporter", {
 
         text += "\n<" + file + ">";
         _.each(data, function(record) {
-            text += this._XMLIndent(1, 'Datarow', false,
-                this._XMLIndent(2, 'GUID', true, record.get('ObjectID')) +
-                this._XMLIndent(2, 'ROW', true, '') +
-                this._XMLIndent(2, 'FORMAT_COL', true, '*') +
-                this._XMLIndent(2, 'TEXT_LINE', true, '')
-            );
+            if ( record.get('c_SAPNetwork') && record.get('c_SAPOperation') && record.get('c_KMDEmployeeID')) {
+                text += this._XMLIndent(1, 'Datarow', false,
+                    this._XMLIndent(2, 'GUID', true, record.get('ObjectID')) +
+                    this._XMLIndent(2, 'ROW', true, '1') +
+                    this._XMLIndent(2, 'FORMAT_COL', true, '*') +
+                    this._XMLIndent(2, 'TEXT_LINE', true, '')
+                );
+            }
         }, this);
 
         text += "</" + file + ">\n";
@@ -75,11 +77,13 @@ Ext.define("GridExporter", {
 
         text += "\n<" + file + ">";
         _.each(data, function(record) {
-            text += this._XMLIndent(1, 'Datarow', false,
-                this._XMLIndent(2, 'GUID', true, record.get('ObjectID')) +
-                this._XMLIndent(2, 'PROFILE', true, record.get('c_KMDEmployeeID') || '') +
-                this._XMLIndent(2, 'TEXT_FORMAT_IMP', true, 'ITF')
-            );
+            if ( record.get('c_SAPNetwork') && record.get('c_SAPOperation') && record.get('c_KMDEmployeeID')) {
+                text += this._XMLIndent(1, 'Datarow', false,
+                    this._XMLIndent(2, 'GUID', true, record.get('ObjectID')) +
+                    this._XMLIndent(2, 'PROFILE', true, record.get('c_KMDEmployeeID') || '') +
+                    this._XMLIndent(2, 'TEXT_FORMAT_IMP', true, 'ITF')
+                );
+            }
         }, this);
 
         text += "</" + file + ">\n";
@@ -95,24 +99,35 @@ Ext.define("GridExporter", {
 
         text += "\n<" + file + ">";
         _.each(data, function(record) {
-            text += this._XMLIndent(1, 'Datarow', false,
-                this._XMLIndent(2, 'GUID', true, record.get('ObjectID') || '') +
-                this._XMLIndent(2, 'WORKDATE', true, Ext.Date.format(new Date(record.get('Date')), 'Ymd')) +
-                this._XMLIndent(2, 'EMPLOYEENUMBER', true, record.get('c_KMDEmployeeID') || '') +
-                this._XMLIndent(2, 'ACTTYPE', true, '') +
-                this._XMLIndent(2, 'NETWORK', true, record.get('c_SAPNetwork') || '') +
-                this._XMLIndent(2, 'ACTIVITY', true, record.get('c_SAPOperation') || '') +
-                this._XMLIndent(2, 'SUB_ACTIVITY', true, record.get('c_SAPSubOperation') || '') +
-                this._XMLIndent(2, 'CATSHOURS', true, record.get('Hours')) +
-                this._XMLIndent(2, 'UNIT', true, 'H') +
-                this._XMLIndent(2, 'SHORTTEXT', true, record.get('TaskDisplayString') || record.get('WorkProductDisplayString') || '') +
-                this._XMLIndent(2, 'LONGTEXT', true, '')
-            );
+            if ( record.get('c_SAPNetwork') && record.get('c_SAPOperation') && record.get('c_KMDEmployeeID')) {
+                text += this._XMLIndent(1, 'Datarow', false,
+                    this._XMLIndent(2, 'GUID', true, record.get('ObjectID') || '') +
+                    this._XMLIndent(2, 'WORKDATE', true, Ext.Date.format(new Date(record.get('Date')), 'Ymd')) +
+                    this._XMLIndent(2, 'EMPLOYEENUMBER', true, record.get('c_KMDEmployeeID') || '') +
+                    this._XMLIndent(2, 'ACTTYPE', true, '1') +
+                    this._XMLIndent(2, 'NETWORK', true, record.get('c_SAPNetwork') || '') +
+                    this._XMLIndent(2, 'ACTIVITY', true, record.get('c_SAPOperation') || '') +
+                    (record.get('c_SAPSubOperation') ? this._XMLIndent(2, 'SUB_ACTIVITY', true, record.get('c_SAPSubOperation')) : '') +
+                    this._XMLIndent(2, 'CATSHOURS', true, record.get('Hours')) +
+                    this._XMLIndent(2, 'UNIT', true, 'H') +
+                    this._XMLIndent(2, 'SHORTTEXT', true, record.get('TaskDisplayString') || record.get('WorkProductDisplayString') || '') +
+                    this._XMLIndent(2, 'LONGTEXT', true, 'X')
+                );
+            }
         }, this);
         text += "</" + file + ">\n";
         file += this.self.XmlFileExtension;
         return [ file, format, text ];
 
+    },
+
+    _addSAPErrorsFile: function(grid) {
+        var file = 'SAPErrors.csv';
+        var format = 'data:text/csv;charset=utf8';
+
+        var text = this._getCSV(grid, true);
+        if (text) return [ file, format, 'Errors in data records: \n' + text ];
+        else return null;
     },
 
     exportSAPXML: function(grid) {
@@ -121,7 +136,18 @@ Ext.define("GridExporter", {
 
         if ( grid && grid.store && grid.store.data ) {
             var data = grid.store.data.items;
-            this._downloadFiles( filesToSave.concat( this._addSAPHeaderFile(data), this._addSAPDataFile(data), this._addSAPTrailerFile(data) ));
+            var errors = this._addSAPErrorsFile(grid);
+
+            if (errors) {
+                this._downloadFiles( errors);
+            }
+            else {
+                this._downloadFiles( filesToSave.concat(
+                    this._addSAPHeaderFile(data),
+                    this._addSAPDataFile(data),
+                    this._addSAPTrailerFile(data)
+                ));
+            }
         }
 
     },
@@ -173,10 +199,11 @@ Ext.define("GridExporter", {
         return cols.length;
     },
 
-    _getCSV: function (grid) {
+    _getCSV: function (grid, onlyErrors) {
         var cols    = grid.columns;
         var store   = grid.store;
         var data    = '';
+        var valid = true;
 
         var that = this;
         Ext.Array.each(cols, function(col, index) {
@@ -193,17 +220,23 @@ Ext.define("GridExporter", {
 
         _.each( store.data.items, function(record,i) {
 
-            Ext.Array.each(cols, function(col, index) {
-            
-                if (col.hidden !== true) {
-                    var fieldName   = col.dataIndex;
-                    var text        = record.get(fieldName);
-                    data += that._getFieldTextAndEscape(text,record,col,index) + ',';
-                }
-            });
-            data += "\n";
+            if ( (!onlyErrors) || ( !(record.get('c_SAPNetwork') && record.get('c_SAPOperation') && record.get('c_KMDEmployeeID')))){
+                Ext.Array.each(cols, function(col, index) {
+                
+                    if (col.hidden !== true) {
+                        var fieldName   = col.dataIndex;
+                        var text        = record.get(fieldName);
+                        data += that._getFieldTextAndEscape(text,record,col,index) + ',';
+                    }
+                });
+                data += "\n";
+            }
         });
 
-        return data;
+        if (valid) {
+            return data;
+        }else {
+            return null;
+        }
     }
 });
