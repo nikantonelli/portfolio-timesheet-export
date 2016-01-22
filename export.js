@@ -138,16 +138,16 @@ Ext.define("GridExporter", {
             var data = grid.store.data.items;
             var errors = this._addSAPErrorsFile(grid);
 
-            if (errors) {
+//            if (errors) {
                 this._downloadFiles( errors);
-            }
-            else {
+//            }
+//            else {
                 this._downloadFiles( filesToSave.concat(
                     this._addSAPHeaderFile(data),
                     this._addSAPDataFile(data),
                     this._addSAPTrailerFile(data)
                 ));
-            }
+//            }
         }
 
     },
@@ -234,11 +234,11 @@ Ext.define("GridExporter", {
             }
         });
 
-        if (onlyErrors) {
-            if (rowData.length === 0) {
-                return null;
-            }
-        }
+//        if (onlyErrors) {
+//            if (rowData.length === 0) {
+//                return null;
+//            }
+//        }
         return hdrData + rowData;
     }
 });
