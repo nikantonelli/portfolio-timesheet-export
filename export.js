@@ -126,7 +126,7 @@ Ext.define("GridExporter", {
         var format = 'data:text/csv;charset=utf8';
 
         var text = this._getCSV(grid, true);
-        if (text) return [ file, format, 'Errors in data records: \n' + text ];
+        if (text) return [ file, format, text ];
         else return null;
     },
 
@@ -202,7 +202,8 @@ Ext.define("GridExporter", {
     _getCSV: function (grid, onlyErrors) {
         var cols    = grid.columns;
         var store   = grid.store;
-        var data    = '';
+        var hdrData    = '';
+        var rowData = '';
         var valid = true;
 
         var that = this;
@@ -213,30 +214,31 @@ Ext.define("GridExporter", {
                 var colLabel = col.dataIndex;
 //                var colLabel = (index === 0 ? "Item " : "") + col.dataIndex;
                 colLabel = colLabel.replace(/<br\/?>/,'');
-                data += that._getFieldTextAndEscape(colLabel) + ',';
+                hdrData += that._getFieldTextAndEscape(colLabel) + ',';
             }
         });
-        data += "\n";
+        hdrData += "\n";
 
         _.each( store.data.items, function(record,i) {
-
-            if ( (!onlyErrors) || ( !(record.get('c_SAPNetwork') && record.get('c_SAPOperation') && record.get('c_KMDEmployeeID')))){
+            valid = record.get('c_SAPNetwork') && record.get('c_SAPOperation') && record.get('c_KMDEmployeeID');
+            if ( (!onlyErrors) || (!valid) ){
                 Ext.Array.each(cols, function(col, index) {
                 
                     if (col.hidden !== true) {
                         var fieldName   = col.dataIndex;
                         var text        = record.get(fieldName);
-                        data += that._getFieldTextAndEscape(text,record,col,index) + ',';
+                        rowData += that._getFieldTextAndEscape(text,record,col,index) + ',';
                     }
                 });
-                data += "\n";
+                rowData += "\n";
             }
         });
 
-        if (valid) {
-            return data;
-        }else {
-            return null;
+        if (onlyErrors) {
+            if (rowData.length === 0) {
+                return null;
+            }
         }
+        return hdrData + rowData;
     }
 });
