@@ -59,7 +59,7 @@ Ext.define("GridExporter", {
                     this._XMLIndent(2, 'GUID', true, record.get('ObjectID')) +
                     this._XMLIndent(2, 'ROW', true, '1') +
                     this._XMLIndent(2, 'FORMAT_COL', true, '*') +
-                    this._XMLIndent(2, 'TEXT_LINE', true, '')
+                    this._XMLIndent(2, 'TEXT_LINE', true,  record.get('TaskDisplayString') || record.get('WorkProductDisplayString') || '')
                 );
             }
         }, this);
@@ -138,9 +138,9 @@ Ext.define("GridExporter", {
             var data = grid.store.data.items;
             var errors = this._addSAPErrorsFile(grid);
 
-//            if (errors) {
+            if (errors) {
                 this._downloadFiles( errors);
-//            }
+            }
 //            else {
                 this._downloadFiles( filesToSave.concat(
                     this._addSAPHeaderFile(data),
@@ -239,6 +239,9 @@ Ext.define("GridExporter", {
 //                return null;
 //            }
 //        }
-        return hdrData + rowData;
+        if (rowData.length > 0)
+            return hdrData + rowData;
+        else
+            return null;
     }
 });
