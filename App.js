@@ -517,7 +517,7 @@ Ext.define('CustomApp', {
    readFeatures : function(stories) {
    var promises = _.map(stories,function(story){
                         var deferred = Ext.create('Deft.Deferred');
-                        var fieldName = _.first(app.piTypes).get("ElementName")
+                        var fieldName = _.first(app.piTypes).get("ElementName");
                         if (_.isNull(story) || _.isUndefined(story.get(fieldName)) || _.isNull(story.get(fieldName))) {
                         deferred.resolve(null);
                         } else {
