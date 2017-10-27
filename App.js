@@ -198,7 +198,7 @@ Ext.define('CustomApp', {
         }
 
         var filter = app._getDateFilter();
-        console.log(filter);
+        console.log("Date Filter: ", filter);
 
         Ext.create('Rally.data.wsapi.Store', {
             model : "TimeEntryValue",
@@ -409,6 +409,8 @@ Ext.define('CustomApp', {
 
    readObject : function(model,ref) {
 
+    console.log('Fetching model: ', model);
+    
    var deferred = Ext.create('Deft.Deferred');
    var obj = _.find( app.cache, function (cacheObj) {
                     if (cacheObj.ref._ref === ref._ref) {
@@ -515,11 +517,12 @@ Ext.define('CustomApp', {
    readFeatures : function(stories) {
    var promises = _.map(stories,function(story){
                         var deferred = Ext.create('Deft.Deferred');
-                        if (_.isNull(story) || _.isUndefined(story.get("Feature")) || _.isNull(story.get("Feature"))) {
+                        var fieldName = _.first(app.piTypes).get("ElementName")
+                        if (_.isNull(story) || _.isUndefined(story.get(fieldName)) || _.isNull(story.get(fieldName))) {
                         deferred.resolve(null);
                         } else {
-                        var featureRef = story.get("Feature");
-                        var featureType = _.first(app.piTypes).get("TypePath");
+                        var featureRef = story.get(fieldName);
+                        var featureType = _.first(app.piTypes).get("TypePath").toLowerCase();
                         // app.readObject('PortfolioItem/Feature',featureRef).then({
                         app.readObject(featureType,featureRef).then({   
                                                                     success : function(obj) {
@@ -539,7 +542,7 @@ Ext.define('CustomApp', {
                         deferred.resolve(null);
                         } else {
                         var epicRef = feature.get("Parent");
-                        var epicType = app.piTypes[1].get("TypePath");
+                        var epicType = app.piTypes[1].get("TypePath").toLowerCase();
                         //app.readObject('PortfolioItem/Epic',epicRef).then({
                         app.readObject(epicType,epicRef).then({ 
                                                               success : function(obj) {
